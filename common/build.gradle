@@ -1,0 +1,21 @@
+// Common 모듈은 라이브러리이므로 bootJar 비활성화
+tasks.named('bootJar') {
+    enabled = false
+}
+
+tasks.named('jar') {
+    enabled = true
+}
+
+dependencies {
+    // Spring Boot Starters (minimal)
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // Apache Commons
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'commons-io:commons-io:2.17.0'
+    implementation 'commons-codec:commons-codec:1.17.1'
+
+    // Validation
+    implementation 'jakarta.validation:jakarta.validation-api'
+}
