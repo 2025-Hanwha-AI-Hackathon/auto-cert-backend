@@ -1,0 +1,48 @@
+graph LR
+    subgraph "Certificate Manager"
+        CM1[ACME Client]
+        CM2[Certificate Store]
+        CM3[Renewal Scheduler]
+        CM4[Validation Service]
+    end
+
+    subgraph "Distribution Service"
+        DS1[SSH Manager]
+        DS2[File Transfer]
+        DS3[Credential Vault]
+        DS4[Target Registry]
+    end
+
+    subgraph "Web Server Integration"
+        WS1[Config Generator]
+        WS2[Server Adapter<br/>Nginx/Apache/Tomcat]
+        WS3[Config Validator]
+        WS4[Backup Manager]
+    end
+
+    subgraph "Reload Service"
+        RS1[Reload Executor]
+        RS2[Health Checker]
+        RS3[Rollback Manager]
+    end
+
+    subgraph "Monitoring Dashboard"
+        MD1[Expiry Tracker]
+        MD2[Event Logger]
+        MD3[Alert Manager]
+        MD4[Report Generator]
+        MD5[Web UI]
+    end
+
+    CM2 --> DS2
+    DS2 --> WS1
+    WS1 --> WS2
+    WS2 --> RS1
+    RS1 --> RS2
+
+    CM3 --> MD1
+    DS4 --> MD2
+    RS2 --> MD3
+    MD1 --> MD5
+    MD2 --> MD5
+    MD3 --> MD5

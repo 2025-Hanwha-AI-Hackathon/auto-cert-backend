@@ -1,0 +1,53 @@
+graph TD
+    subgraph "Application Layer"
+        API[api<br/>Main Application]
+    end
+
+    subgraph "Service Layer"
+        CM[certificate-manager<br/>인증서 관리]
+        DS[distribution-service<br/>배포 서비스]
+        WS[webserver-integration<br/>웹서버 통합]
+        RS[reload-service<br/>재시작 서비스]
+        MS[monitoring-service<br/>모니터링]
+    end
+
+    subgraph "Core Layer"
+        DOMAIN[domain<br/>도메인 모델]
+    end
+
+    subgraph "Foundation Layer"
+        COMMON[common<br/>공통 유틸]
+    end
+
+    API --> CM
+    API --> DS
+    API --> WS
+    API --> RS
+    API --> MS
+    API --> DOMAIN
+
+    CM --> DOMAIN
+    CM --> COMMON
+
+    DS --> DOMAIN
+    DS --> COMMON
+
+    WS --> DOMAIN
+    WS --> COMMON
+
+    RS --> DOMAIN
+    RS --> COMMON
+
+    MS --> DOMAIN
+    MS --> COMMON
+
+    DOMAIN --> COMMON
+
+    style API fill:#e1f5ff
+    style CM fill:#fff4e1
+    style DS fill:#fff4e1
+    style WS fill:#fff4e1
+    style RS fill:#fff4e1
+    style MS fill:#fff4e1
+    style DOMAIN fill:#e1ffe1
+    style COMMON fill:#f0f0f0

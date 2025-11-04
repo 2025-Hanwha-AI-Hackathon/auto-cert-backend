@@ -1,0 +1,46 @@
+flowchart TD
+    Start([Certificate Renewed]) --> Validate{Validate<br/>Certificate}
+    Validate -->|Invalid| Rollback[Rollback & Alert]
+    Validate -->|Valid| GetTargets[Get Target Servers]
+
+    GetTargets --> Deploy[Deploy to Servers]
+
+    Deploy --> Backup[Backup Old Certificates]
+    Backup --> Transfer[Transfer New Certificate]
+    Transfer --> Verify{Verify<br/>Transfer}
+
+    Verify -->|Failed| Retry{Retry<br/>Count < 3}
+    Retry -->|Yes| Transfer
+    Retry -->|No| Alert1[Alert Admin]
+
+    Verify -->|Success| DetectWebServer[Detect Web Server Type]
+
+    DetectWebServer --> ApplyConfig{Apply Configuration}
+    ApplyConfig -->|Nginx| ApplyNginx[Update Nginx Config]
+    ApplyConfig -->|Apache| ApplyApache[Update Apache Config]
+    ApplyConfig -->|Tomcat| ApplyTomcat[Update Keystore]
+
+    ApplyNginx --> TestConfig1[Test Configuration]
+    ApplyApache --> TestConfig1
+    ApplyTomcat --> TestConfig1
+
+    TestConfig1 -->|Failed| RestoreBackup[Restore Backup]
+    RestoreBackup --> Alert2[Alert Admin]
+
+    TestConfig1 -->|Success| ReloadOption{Reload<br/>Required?}
+
+    ReloadOption -->|Yes| GracefulReload[Graceful Reload]
+    ReloadOption -->|No| UpdateDB[Update Database]
+
+    GracefulReload --> HealthCheck{Health<br/>Check}
+    HealthCheck -->|Failed| Emergency[Emergency Rollback]
+    Emergency --> Alert3[Alert Admin]
+
+    HealthCheck -->|Success| UpdateDB
+    UpdateDB --> NotifySuccess[Notify Success]
+    NotifySuccess --> End([Complete])
+
+    Alert1 --> End
+    Alert2 --> End
+    Alert3 --> End
+    Rollback --> End

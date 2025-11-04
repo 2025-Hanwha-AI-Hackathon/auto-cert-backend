@@ -1,0 +1,45 @@
+graph TB
+    subgraph "Dashboard Views"
+        Overview[Overview Page]
+        CertList[Certificate List]
+        Timeline[Renewal Timeline]
+        Servers[Server Status]
+        Logs[Activity Logs]
+        Alerts[Alerts & Notifications]
+    end
+
+    subgraph "Metrics"
+        M1[Total Certificates]
+        M2[Expiring Soon<br/>< 30 days]
+        M3[Recently Renewed]
+        M4[Failed Renewals]
+        M5[Server Health Status]
+    end
+
+    subgraph "Actions"
+        A1[Manual Renewal]
+        A2[Force Deploy]
+        A3[Test Configuration]
+        A4[View Certificate Details]
+        A5[Download Certificate]
+    end
+
+    Overview --> M1
+    Overview --> M2
+    Overview --> M3
+    Overview --> M4
+    Overview --> M5
+
+    CertList --> A1
+    CertList --> A2
+    CertList --> A4
+    CertList --> A5
+
+    Timeline --> M2
+    Timeline --> M3
+
+    Servers --> M5
+    Servers --> A3
+
+    Logs --> M4
+    Alerts --> A1

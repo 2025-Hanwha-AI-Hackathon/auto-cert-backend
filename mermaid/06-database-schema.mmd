@@ -1,0 +1,51 @@
+erDiagram
+    CERTIFICATES ||--o{ DEPLOYMENTS : has
+    CERTIFICATES ||--o{ RENEWAL_HISTORY : has
+    SERVERS ||--o{ DEPLOYMENTS : receives
+    SERVERS ||--o{ SERVER_CONFIGS : has
+
+    CERTIFICATES {
+        string id PK
+        string domain
+        datetime issued_at
+        datetime expires_at
+        string status
+        text certificate_pem
+        text private_key_pem
+        text chain_pem
+    }
+
+    SERVERS {
+        string id PK
+        string hostname
+        string ip_address
+        string server_type
+        int port
+        string status
+        datetime last_health_check
+    }
+
+    DEPLOYMENTS {
+        string id PK
+        string certificate_id FK
+        string server_id FK
+        datetime deployed_at
+        string status
+        text deployment_log
+    }
+
+    RENEWAL_HISTORY {
+        string id PK
+        string certificate_id FK
+        datetime renewed_at
+        string status
+        text error_message
+    }
+
+    SERVER_CONFIGS {
+        string id PK
+        string server_id FK
+        string config_type
+        text config_content
+        datetime updated_at
+    }

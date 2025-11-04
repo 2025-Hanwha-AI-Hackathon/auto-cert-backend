@@ -1,0 +1,40 @@
+# 민감한 정보
+*.key
+*.pem
+.env
+.env.*
+*.crt
+*.p12
+secret-*.json
+config/secrets.json
+
+# 빌드 결과물
+build/
+dist/
+target/
+*.jar
+*.war
+*.class
+
+# 로그 및 임시 파일
+*.log
+debug.log
+*.pid
+hs_err_pid*.log
+logs/
+tmp/
+.cache/
+
+# IDE 설정 파일
+.idea/
+.vscode/
+*.iml
+
+# OS 생성 파일
+.DS_Store
+Thumbs.db
+
+# 의존성 파일
+node_modules/
+.gradle/
+.m2/
