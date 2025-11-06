@@ -36,4 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 
+### env files ###
+.env
+
+### etc ###
 .serena/
