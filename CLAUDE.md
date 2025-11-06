@@ -10,7 +10,7 @@ Auto-Cert는 Spring Boot 3.x와 Java 21로 구축된 SSL/TLS 인증서 관리 �
 - Java 21 (LTS)
 - Spring Boot 3.5.7
 - Gradle 8.14.3 (Groovy DSL)
-- PostgreSQL 17
+- PostgreSQL 16
 - ACME4J 3.3.1 (Let's Encrypt 연동)
 
 ## 빌드 및 개발 명령어
@@ -123,7 +123,6 @@ api (Application Layer - 애플리케이션 계층)
 
 **distribution-service/** - 대상 서버로의 인증서 배포
 - sshj 라이브러리를 사용한 SSH/SFTP 파일 전송
-- 자격증명 관리를 위한 HashiCorp Vault 연동
 - 재시도 로직 (최대 3회, exponential backoff)
 - 다중 서버 병렬 배포 지원
 

@@ -67,7 +67,7 @@ Spring Boot 멀티 모듈 의존성 관계
 - **Framework**: Spring Boot 3.5.7
 - **JDK**: 21 (LTS)
 - **Build Tool**: Gradle 8.14.3
-- **Database**: PostgreSQL 16
+- **Database**: PostgreSQL 17
 - **ACME Library**: acme4j 3.3.1
 
 ### Infrastructure

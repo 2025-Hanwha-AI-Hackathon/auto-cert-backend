@@ -1,0 +1,52 @@
+// Flyway Gradle 플러그인이 사용할 의존성 (PostgreSQL 드라이버)
+buildscript {
+    dependencies {
+        classpath 'org.postgresql:postgresql:42.7.4'
+        classpath 'org.flywaydb:flyway-database-postgresql:11.17.0'
+    }
+}
+
+plugins {
+    id 'org.flywaydb.flyway' version '11.17.0'
+}
+
+// domain 모듈은 라이브러리이므로 bootJar 비활성화
+tasks.named('bootJar') {
+    enabled = false
+}
+
+tasks.named('jar') {
+    enabled = true
+}
+
+// Flyway 설정 (Gradle 플러그인용)
+flyway {
+    // 환경변수 우선, 없으면 로컬 개발 기본값 사용
+    url = System.getenv('FLYWAY_URL') ?: 'jdbc:postgresql://localhost:5432/autocert'
+    user = System.getenv('DB_USERNAME') ?: 'autocert'
+    password = System.getenv('DB_PASSWORD') ?: 'autocertpassword'
+
+    // 마이그레이션 스크립트 위치
+    locations = ['classpath:db/migration']
+
+    // 기존 DB에 Flyway 적용 시 baseline 생성
+    baselineOnMigrate = true
+    baselineVersion = '0'
+}
+
+dependencies {
+    implementation project(':common')
+
+    // Spring Data JPA
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Flyway
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+
+    // Validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+}
