@@ -1,0 +1,232 @@
+graph TB
+    subgraph "Frontend Layer"
+        FE[React Application]
+        FE_COMP[Components]
+        FE_STATE[State Management]
+        FE_API[API Client]
+
+        FE --> FE_COMP
+        FE --> FE_STATE
+        FE --> FE_API
+    end
+
+    subgraph "Backend Layer - Auto Cert Backend (Spring Boot 3.x + Java 21)"
+        subgraph "API Module (Application Layer)"
+            API[API Gateway]
+            API_CTRL[REST Controllers]
+            API_SEC[Security/JWT]
+            API_SCHED[Schedulers]
+
+            API --> API_CTRL
+            API --> API_SEC
+            API --> API_SCHED
+        end
+
+        subgraph "Service Modules (Business Layer)"
+            CERT_MGR[Certificate Manager]
+            DIST_SVC[Distribution Service]
+            WEB_INT[Webserver Integration]
+            RELOAD_SVC[Reload Service]
+            MON_SVC[Monitoring Service]
+        end
+
+        subgraph "Certificate Manager Module"
+            ACME[ACME Protocol]
+            RENEW[Renewal Scheduler]
+            CHALLENGE[DNS/HTTP Challenge]
+            STRATEGY[Renewal Strategy]
+        end
+
+        subgraph "Distribution Service Module"
+            SSH[SSH/SFTP Client]
+            RETRY[Retry Logic]
+            PARALLEL[Parallel Deployment]
+        end
+
+        subgraph "Webserver Integration Module"
+            NGINX_ADAPTER[Nginx Adapter]
+            APACHE_ADAPTER[Apache Adapter]
+            TOMCAT_ADAPTER[Tomcat Adapter]
+            IIS_ADAPTER[IIS Adapter]
+            TEMPLATE[Template Engine]
+        end
+
+        subgraph "Reload Service Module"
+            GRACEFUL[Graceful Reload]
+            HEALTH[Health Check]
+            ROLLBACK[Auto Rollback]
+        end
+
+        subgraph "Monitoring Service Module"
+            ALERT[Alert Manager]
+            EMAIL[Email Notification]
+            SLACK[Slack Integration]
+            METRICS[Prometheus Metrics]
+        end
+
+        subgraph "Domain Module (Core Layer)"
+            ENTITY[JPA Entities]
+            REPO[Repositories]
+            DOMAIN_SVC[Domain Services]
+            EVENTS[Domain Events]
+
+            ENTITY --> REPO
+            REPO --> DOMAIN_SVC
+            DOMAIN_SVC --> EVENTS
+        end
+
+        subgraph "Common Module (Foundation Layer)"
+            EXCEPTION[Exception Handling]
+            CONSTANTS[Constants]
+            UTILS[Utilities]
+        end
+
+        API --> CERT_MGR
+        API --> DIST_SVC
+        API --> WEB_INT
+        API --> RELOAD_SVC
+        API --> MON_SVC
+
+        CERT_MGR --> ACME
+        CERT_MGR --> RENEW
+        CERT_MGR --> CHALLENGE
+        CERT_MGR --> STRATEGY
+
+        DIST_SVC --> SSH
+        DIST_SVC --> RETRY
+        DIST_SVC --> PARALLEL
+
+        WEB_INT --> NGINX_ADAPTER
+        WEB_INT --> APACHE_ADAPTER
+        WEB_INT --> TOMCAT_ADAPTER
+        WEB_INT --> IIS_ADAPTER
+        WEB_INT --> TEMPLATE
+
+        RELOAD_SVC --> GRACEFUL
+        RELOAD_SVC --> HEALTH
+        RELOAD_SVC --> ROLLBACK
+
+        MON_SVC --> ALERT
+        MON_SVC --> EMAIL
+        MON_SVC --> SLACK
+        MON_SVC --> METRICS
+
+        CERT_MGR --> DOMAIN
+        DIST_SVC --> DOMAIN
+        WEB_INT --> DOMAIN
+        RELOAD_SVC --> DOMAIN
+        MON_SVC --> DOMAIN
+
+        DOMAIN --> COMMON
+        API --> COMMON
+    end
+
+    subgraph "AI Service Layer (Multi-Agent Architecture)"
+        AI_GATEWAY[AI Service Gateway]
+
+        subgraph "Agent Orchestrator"
+            ORCHESTRATOR[Agent Orchestrator]
+            ROUTER[Agent Router]
+            CONTEXT[Context Manager]
+        end
+
+        subgraph "Specialized Agents"
+            CERT_AGENT[Certificate Expert Agent]
+            TROUBLE_AGENT[Troubleshooting Agent]
+            CONFIG_AGENT[Configuration Agent]
+            SECURITY_AGENT[Security Advisor Agent]
+            DOCS_AGENT[Documentation Agent]
+        end
+
+        subgraph "Agent Support Services"
+            LLM[LLM Integration<br/>OpenAI/Anthropic]
+            MEMORY[Conversation Memory]
+            KNOWLEDGE[Knowledge Base]
+            TOOLS[Agent Tools/Functions]
+        end
+
+        AI_GATEWAY --> ORCHESTRATOR
+        ORCHESTRATOR --> ROUTER
+        ORCHESTRATOR --> CONTEXT
+
+        ROUTER --> CERT_AGENT
+        ROUTER --> TROUBLE_AGENT
+        ROUTER --> CONFIG_AGENT
+        ROUTER --> SECURITY_AGENT
+        ROUTER --> DOCS_AGENT
+
+        CERT_AGENT --> LLM
+        TROUBLE_AGENT --> LLM
+        CONFIG_AGENT --> LLM
+        SECURITY_AGENT --> LLM
+        DOCS_AGENT --> LLM
+
+        CERT_AGENT --> MEMORY
+        TROUBLE_AGENT --> MEMORY
+        CONFIG_AGENT --> MEMORY
+        SECURITY_AGENT --> MEMORY
+        DOCS_AGENT --> MEMORY
+
+        CERT_AGENT --> KNOWLEDGE
+        TROUBLE_AGENT --> KNOWLEDGE
+        CONFIG_AGENT --> KNOWLEDGE
+        SECURITY_AGENT --> KNOWLEDGE
+        DOCS_AGENT --> KNOWLEDGE
+
+        CERT_AGENT --> TOOLS
+        TROUBLE_AGENT --> TOOLS
+        CONFIG_AGENT --> TOOLS
+        SECURITY_AGENT --> TOOLS
+        DOCS_AGENT --> TOOLS
+    end
+
+    subgraph "Data Layer"
+        DB[(PostgreSQL 16)]
+        CACHE[(Redis Cache)]
+        VAULT[(HashiCorp Vault)]
+        VECTOR_DB[(Vector DB<br/>for AI)]
+    end
+
+    subgraph "External Services"
+        ACME_SERVER[ACME Server<br/>Let's Encrypt/ZeroSSL]
+        TARGET_SERVERS[Target Servers<br/>Nginx/Apache/Tomcat]
+        DNS_PROVIDER[DNS Provider]
+        PROMETHEUS[Prometheus]
+    end
+
+    %% Frontend to Backend
+    FE_API -->|REST API<br/>HTTPS/JWT| API
+
+    %% Backend to AI Service
+    API -->|Chat API<br/>REST/gRPC| AI_GATEWAY
+
+    %% Backend to Data Layer
+    DOMAIN --> DB
+    API --> CACHE
+    API --> VAULT
+
+    %% AI Service to Data Layer
+    AI_GATEWAY --> VECTOR_DB
+    AI_GATEWAY --> CACHE
+
+    %% AI Service to Backend
+    TOOLS -->|Query Certificate Data| API
+
+    %% Backend to External Services
+    ACME --> ACME_SERVER
+    CHALLENGE --> DNS_PROVIDER
+    DIST_SVC --> TARGET_SERVERS
+    RELOAD_SVC --> TARGET_SERVERS
+    METRICS --> PROMETHEUS
+
+    classDef frontend fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    classDef backend fill:#6db33f,stroke:#333,stroke-width:2px,color:#fff
+    classDef ai fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#fff
+    classDef data fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+    classDef external fill:#ffd93d,stroke:#333,stroke-width:2px,color:#000
+
+    class FE,FE_COMP,FE_STATE,FE_API frontend
+    class API,API_CTRL,API_SEC,API_SCHED,CERT_MGR,DIST_SVC,WEB_INT,RELOAD_SVC,MON_SVC,DOMAIN,COMMON backend
+    class AI_GATEWAY,ORCHESTRATOR,ROUTER,CONTEXT,CERT_AGENT,TROUBLE_AGENT,CONFIG_AGENT,SECURITY_AGENT,DOCS_AGENT,LLM,MEMORY,KNOWLEDGE,TOOLS ai
+    class DB,CACHE,VAULT,VECTOR_DB data
+    class ACME_SERVER,TARGET_SERVERS,DNS_PROVIDER,PROMETHEUS external
