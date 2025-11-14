@@ -38,3 +38,6 @@ Thumbs.db
 node_modules/
 .gradle/
 .m2/
+
+# 로그 파일
+logs/

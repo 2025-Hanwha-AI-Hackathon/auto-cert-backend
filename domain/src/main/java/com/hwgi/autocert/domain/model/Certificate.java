@@ -2,6 +2,7 @@ package com.hwgi.autocert.domain.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,8 +27,9 @@ public class Certificate {
     @Column(name = "expired_at")
     private LocalDateTime expiresAt;
 
-    @Column(nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private CertificateStatus status;
 
     @Lob
     @Column(name = "certificate_pem", columnDefinition = "TEXT")
@@ -43,9 +45,6 @@ public class Certificate {
 
     @Column
     private String password;
-
-    @Column
-    private String admin;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

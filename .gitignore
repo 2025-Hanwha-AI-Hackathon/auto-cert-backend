@@ -42,3 +42,10 @@ out/
 ### etc ###
 .serena/
 .claude
+logs/
+
+### certificates and keys ###
+certs/*.pem
+certs/*.key
+certs/*.crt
+!certs/.gitkeep

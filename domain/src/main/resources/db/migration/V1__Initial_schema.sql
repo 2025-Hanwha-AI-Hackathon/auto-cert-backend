@@ -4,7 +4,6 @@
 CREATE TABLE certificates (
     id BIGSERIAL PRIMARY KEY,
     domain VARCHAR(255) NOT NULL UNIQUE,
-    issuer VARCHAR(255),
     issued_at TIMESTAMP,
     expired_at TIMESTAMP,
     status VARCHAR(255) NOT NULL,
@@ -12,9 +11,6 @@ CREATE TABLE certificates (
     private_key_pem TEXT,
     chain_pem TEXT,
     password VARCHAR(255),
-    admin VARCHAR(255),
-    renewal_attempts INTEGER,
-    last_error TEXT,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITHOUT TIME ZONE
 );

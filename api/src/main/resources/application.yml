@@ -1,0 +1,144 @@
+spring:
+  application:
+    name: auto-cert
+  config:
+    import: optional:file:.env[.properties]
+
+  profiles:
+    active: ${SPRING_PROFILE:local}
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: ${TZ:Asia/Seoul}
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+
+# Application specific configuration
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Auto-Cert Configuration
+autocert:
+  certificate:
+    acme:
+      # ACME 서버 URL. 환경 변수 ACME_DIRECTORY_URL로 대체 가능.
+      # Staging: https://acme-staging-v02.api.letsencrypt.org/directory
+      # Production: https://acme-v02.api.letsencrypt.org/directory
+      directory-url: ${ACME_DIRECTORY_URL}
+
+      # ACME 계정 이메일 (필수). 환경 변수 ACME_ACCOUNT_EMAIL로 대체 가능.
+      # 중요: 유효한 이메일로 변경하세요.
+      account-email: ${ACME_ACCOUNT_EMAIL}
+
+      # 키 알고리즘 (RSA, ECDSA)
+      key-algorithm: ${ACME_KEY_ALGORITHM}
+
+      # 키 사이즈 (RSA: 2048/4096, ECDSA: 256/384)
+      key-size: ${ACME_KEY_SIZE}
+
+      # 서비스 약관 자동 동의
+      accept-terms: ${ACME_ACCEPT_TERMS}
+
+      # 챌린지 타임아웃 (초)
+      challenge-timeout: ${ACME_CHALLENGE_TIMEOUT}
+
+      # 챌린지 폴링 간격 (밀리초)
+      challenge-polling-interval: ${ACME_CHALLENGE_POLLING_INTERVAL}
+
+      # 인증서 발급 타임아웃 (초)
+      order-timeout: ${ACME_ORDER_TIMEOUT}
+
+      # 인증서 발급 폴링 간격 (밀리초)
+      order-polling-interval: ${ACME_ORDER_POLLING_INTERVAL}
+
+      # 기본 챌린지 타입 (HTTP_01, DNS_01)
+      default-challenge-type: ${ACME_DEFAULT_CHALLENGE_TYPE}
+
+      # HTTP-01 챌린지 웹루트 디렉토리
+      http01-webroot: ${ACME_HTTP01_WEBROOT}
+
+      # DNS-01 챌린지 프로바이더 (manual, cloudflare, route53)
+      dns01-provider: ${ACME_DNS01_PROVIDER}
+
+      # DNS 전파 대기 타임아웃 (초)
+      dns-propagation-timeout: ${ACME_DNS_PROPAGATION_TIMEOUT}
+
+# Cloudflare DNS Provider (DNS-01 챌린지용)
+cloudflare:
+  # API Token 방식 (권장)
+  api-token: ${CLOUDFLARE_API_TOKEN}
+
+# Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: true
+
+
+logging:
+  config: classpath:logback-spring-${spring.profiles.active}.xml
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  jpa:
+    show-sql: true
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
