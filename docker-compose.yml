@@ -1,18 +1,99 @@
 version: '3.8'
+
 services:
+  # PostgreSQL Database
   postgres:
-    image: postgres:16
-    container_name: autocert-postgres
+    image: postgres:16-alpine
+    container_name: auto-cert-db
     environment:
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: autocert
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    env_file:
-      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - auto-cert-network
+
+  # Auto-Cert Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: auto-cert:latest
+    container_name: auto-cert-app
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring Profile
+      SPRING_PROFILE: ${SPRING_PROFILE}
+
+      # Database Configuration
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # ACME Configuration
+      ACME_DIRECTORY_URL: ${ACME_DIRECTORY_URL}
+      ACME_ACCOUNT_EMAIL: ${ACME_ACCOUNT_EMAIL}
+      ACME_KEY_ALGORITHM: ${ACME_KEY_ALGORITHM}
+      ACME_KEY_SIZE: ${ACME_KEY_SIZE}
+      ACME_ACCEPT_TERMS: ${ACME_ACCEPT_TERMS}
+      ACME_CHALLENGE_TIMEOUT: ${ACME_CHALLENGE_TIMEOUT}
+      ACME_CHALLENGE_POLLING_INTERVAL: ${ACME_CHALLENGE_POLLING_INTERVAL}
+      ACME_ORDER_TIMEOUT: ${ACME_ORDER_TIMEOUT}
+      ACME_ORDER_POLLING_INTERVAL: ${ACME_ORDER_POLLING_INTERVAL}
+      ACME_DEFAULT_CHALLENGE_TYPE: ${ACME_DEFAULT_CHALLENGE_TYPE}
+      ACME_HTTP01_WEBROOT: ${ACME_HTTP01_WEBROOT}
+      ACME_DNS01_PROVIDER: ${ACME_DNS01_PROVIDER}
+      ACME_DNS_PROPAGATION_TIMEOUT: ${ACME_DNS_PROPAGATION_TIMEOUT}
+
+      # Cloudflare
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+
+      # CORS Configuration
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Mount for ACME HTTP-01 challenge webroot
+      - acme_challenge:/tmp/acme-challenge
+    networks:
+      - auto-cert-network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: auto-cert-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - auto-cert-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  acme_challenge:
+    driver: local
+
+networks:
+  auto-cert-network:
+    driver: bridge

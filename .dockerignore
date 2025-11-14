@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Gradle
+.gradle
+**/build
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+.eclipse
+.settings
+
+# Logs
+*.log
+logs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Documentation
+docs
+*.md
+!README.md
+
+# CI/CD
+.github
+
+# Node (if any frontend exists)
+node_modules
+
+# Test
+**/test-results
+**/coverage
