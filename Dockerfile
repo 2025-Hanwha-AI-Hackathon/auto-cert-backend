@@ -2,29 +2,39 @@
 FROM gradle:8.14.3-jdk21 AS build
 WORKDIR /app
 
-# Copy gradle configuration files
+# Copy gradle configuration files first (better caching)
 COPY build.gradle settings.gradle ./
+COPY gradle.properties* ./
 
-# Copy all module source code
-COPY common ./common
-COPY domain ./domain
-COPY certificate-manager ./certificate-manager
-COPY api ./api
+# Copy all module build.gradle files to cache dependencies
+COPY common/build.gradle ./common/
+COPY domain/build.gradle ./domain/
+COPY certificate-manager/build.gradle ./certificate-manager/
+COPY api/build.gradle ./api/
 
-# Build the application using Docker image's gradle (no wrapper download needed)
-RUN gradle :api:bootJar --no-daemon
+# Download dependencies (this layer will be cached unless build files change)
+RUN gradle build --no-daemon -x test -x compileJava -x compileTestJava || return 0
+
+# Now copy all source code
+COPY common/src ./common/src
+COPY domain/src ./domain/src
+COPY certificate-manager/src ./certificate-manager/src
+COPY api/src ./api/src
+
+# Build the application
+RUN gradle :api:bootJar --no-daemon -x test
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy the built jar from build stage (use wildcard to match any version)
+# Copy the built jar from build stage
 COPY --from=build /app/api/build/libs/*.jar app.jar
 
-# Set timezone (can be overridden by TZ environment variable)
+# Set timezone
 ENV TZ=Asia/Seoul
 
-# Expose port (Railway will override with PORT env var)
+# Expose port
 EXPOSE 8080
 
 # Run the application
