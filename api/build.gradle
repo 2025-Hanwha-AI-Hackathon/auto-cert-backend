@@ -2,6 +2,7 @@ dependencies {
     // Internal dependencies
     implementation project(':common')
     implementation project(':domain')
+    implementation project(':server-manager')
     implementation project(':certificate-manager')
     implementation project(':ai-assistant')
 

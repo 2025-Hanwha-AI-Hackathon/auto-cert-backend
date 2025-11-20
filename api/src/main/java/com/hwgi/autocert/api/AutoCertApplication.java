@@ -17,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = {
     "com.hwgi.autocert.api",
     "com.hwgi.autocert.domain",
+    "com.hwgi.autocert.server",
     "com.hwgi.autocert.certificate",
     "com.hwgi.autocert.common",
     "com.hwgi.autocert.ai"

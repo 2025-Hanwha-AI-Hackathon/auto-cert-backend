@@ -1,4 +1,4 @@
-package com.hwgi.autocert.api.dto.request;
+package com.hwgi.autocert.server.dto;
 
 import com.hwgi.autocert.common.constants.WebServerType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -50,3 +50,4 @@ public class ServerCreateRequest {
     @NotBlank(message = "배포 경로는 필수입니다")
     private String deployPath;
 }
+

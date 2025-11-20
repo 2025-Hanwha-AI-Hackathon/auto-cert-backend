@@ -1,4 +1,4 @@
-package com.hwgi.autocert.api.dto.request;
+package com.hwgi.autocert.server.dto;
 
 import com.hwgi.autocert.common.constants.WebServerType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,3 +41,4 @@ public class ServerUpdateRequest {
     @Schema(example = "/etc/nginx/ssl", description = "인증서 배포 경로")
     private String deployPath;
 }
+

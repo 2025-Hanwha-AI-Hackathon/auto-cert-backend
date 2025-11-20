@@ -1,10 +1,10 @@
 package com.hwgi.autocert.api.controller;
 
-import com.hwgi.autocert.api.dto.request.ServerCreateRequest;
-import com.hwgi.autocert.api.dto.request.ServerUpdateRequest;
+import com.hwgi.autocert.server.dto.ServerCreateRequest;
+import com.hwgi.autocert.server.dto.ServerUpdateRequest;
+import com.hwgi.autocert.server.dto.ServerResponse;
+import com.hwgi.autocert.server.service.ServerService;
 import com.hwgi.autocert.api.dto.response.PageResponse;
-import com.hwgi.autocert.api.dto.response.ServerResponse;
-import com.hwgi.autocert.api.service.ServerService;
 import com.hwgi.autocert.common.dto.ApiResponse;
 import com.hwgi.autocert.domain.model.Server;
 import io.swagger.v3.oas.annotations.Operation;

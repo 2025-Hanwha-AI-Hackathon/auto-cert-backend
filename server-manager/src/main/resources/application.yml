@@ -1,0 +1,5 @@
+# Server Manager Module Configuration
+spring:
+  application:
+    name: server-manager
+

@@ -2,6 +2,7 @@ rootProject.name = 'auto-cert'
 
 include 'common'
 include 'domain'
-include 'api'
+include 'server-manager'
 include 'certificate-manager'
 include 'ai-assistant'
+include 'api'
