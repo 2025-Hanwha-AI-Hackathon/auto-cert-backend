@@ -91,8 +91,7 @@ docker-compose down
 ### 모듈 의존성 계층 구조
 ```
 api (Application Layer - 애플리케이션 계층)
- ├─> certificate-manager
- ├─> distribution-service
+ ├─> certificate-manager (인증서 관리 및 배포)
  ├─> webserver-integration
  ├─> reload-service
  ├─> monitoring-service
@@ -114,16 +113,14 @@ api (Application Layer - 애플리케이션 계층)
 - 도메인 서비스 및 이벤트
 - Flyway 마이그레이션 (`src/main/resources/db/migration/`)
 
-**certificate-manager/** - 인증서 생명주기 관리
+**certificate-manager/** - 인증서 생명주기 관리 및 배포
 - ACME 프로토콜 통합 (Let's Encrypt, ZeroSSL)
 - DNS-01, HTTP-01 챌린지 핸들러
 - 인증서 갱신 스케줄러 (cron: "0 0 2 * * ?" - 매일 새벽 2시)
 - 인증서 타입별 갱신 전략 패턴
 - 인증서 검증 및 저장
-
-**distribution-service/** - 대상 서버로의 인증서 배포
-- sshj 라이브러리를 사용한 SSH/SFTP 파일 전송
-- 재시도 로직 (최대 3회, exponential backoff)
+- SSH/SFTP를 통한 대상 서버 인증서 배포 (sshj 라이브러리)
+- 배포 재시도 로직 (최대 3회, exponential backoff)
 - 다중 서버 병렬 배포 지원
 
 **webserver-integration/** - 웹서버 설정 통합

@@ -22,7 +22,7 @@ COPY certificate-manager/src ./certificate-manager/src
 COPY api/src ./api/src
 
 # Build the application
-RUN gradle :api:bootJar --no-daemon -x test
+RUN gradle :api:bootJar --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
@@ -38,4 +38,4 @@ ENV TZ=Asia/Seoul
 EXPOSE 8080
 
 # Run the application
-ENTRYPOINT ["java", "-Xmx1024m", "-Xms512m", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx2048m", "-Xms1024m", "-jar", "app.jar"]

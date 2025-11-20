@@ -59,7 +59,7 @@ auto-cert/
 │           ├── java/com/hwgi/autocert/domain/
 │           └── resources/
 │
-├── certificate-manager/              # 인증서 관리 모듈
+├── certificate-manager/              # 인증서 관리 및 배포 모듈
 │   ├── build.gradle
 │   └── src/
 │       ├── main/
@@ -73,29 +73,15 @@ auto-cert/
 │       │   │   │   └── strategy/
 │       │   │   ├── store/           # 인증서 저장소
 │       │   │   ├── validation/      # 검증
+│       │   │   ├── distribution/    # 인증서 배포
+│       │   │   │   ├── config/      # 배포 설정
+│       │   │   │   ├── ssh/         # SSH/SFTP 클라이언트
+│       │   │   │   └── service/     # 배포 서비스
 │       │   │   └── config/
 │       │   └── resources/
-│       │       └── application-certificate.yml
+│       │       └── application.yml
 │       └── test/
 │           ├── java/com/hwgi/autocert/certificate/
-│           └── resources/
-│
-├── distribution-service/             # 배포 서비스 모듈
-│   ├── build.gradle
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/hwgi/autocert/distribution/
-│       │   │   ├── transfer/        # 파일 전송
-│       │   │   │   ├── ssh/         # SSH/SCP
-│       │   │   │   └── sftp/
-│       │   │   ├── credential/      # 자격증명 관리
-│       │   │   │   └── vault/       # Vault integration
-│       │   │   ├── target/          # 대상 서버 관리
-│       │   │   └── config/
-│       │   └── resources/
-│       │       └── application-distribution.yml
-│       └── test/
-│           ├── java/com/hwgi/autocert/distribution/
 │           └── resources/
 │
 ├── webserver-integration/            # 웹서버 통합 모듈
@@ -121,21 +107,6 @@ auto-cert/
 │       │       └── application-webserver.yml
 │       └── test/
 │           ├── java/com/hwgi/autocert/webserver/
-│           └── resources/
-│
-├── reload-service/                   # 재시작 서비스 모듈
-│   ├── build.gradle
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/hwgi/autocert/reload/
-│       │   │   ├── executor/        # 재시작 실행
-│       │   │   ├── healthcheck/     # 헬스체크
-│       │   │   ├── rollback/        # 롤백 관리
-│       │   │   └── config/
-│       │   └── resources/
-│       │       └── application-reload.yml
-│       └── test/
-│           ├── java/com/hwgi/autocert/reload/
 │           └── resources/
 │
 ├── monitoring-service/               # 모니터링 서비스 모듈
@@ -187,10 +158,8 @@ auto-cert/
 
 ```
 api
- ├─> certificate-manager
- ├─> distribution-service
+ ├─> certificate-manager (인증서 관리 + 배포)
  ├─> webserver-integration
- ├─> reload-service
  ├─> monitoring-service
  └─> domain
 
@@ -198,15 +167,7 @@ certificate-manager
  ├─> domain
  └─> common
 
-distribution-service
- ├─> domain
- └─> common
-
 webserver-integration
- ├─> domain
- └─> common
-
-reload-service
  ├─> domain
  └─> common
 
@@ -219,163 +180,6 @@ domain
 
 common
  └─> (no dependencies)
-```
-
-## 주요 의존성
-
-### Common Module (`common/build.gradle`)
-
-```groovy
-dependencies {
-    // Spring Boot Starters
-    implementation 'org.springframework.boot:spring-boot-starter'
-}
-```
-
-### Domain Module (`domain/build.gradle`)
-
-```groovy
-dependencies {
-    implementation project(':common')
-
-    // Spring Data JPA
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-    // Database
-    runtimeOnly 'org.postgresql:postgresql'
-
-    // Flyway
-    implementation 'org.flywaydb:flyway-core'
-    implementation 'org.flywaydb:flyway-database-postgresql'
-
-    // Validation
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-}
-```
-
-### Certificate Manager Module (`certificate-manager/build.gradle`)
-
-```groovy
-dependencies {
-    implementation project(':common')
-    implementation project(':domain')
-
-    // ACME4J (ACME protocol)
-    implementation "org.shredzone.acme4j:acme4j-client:${acme4jVersion}"
-    implementation "org.shredzone.acme4j:acme4j-utils:${acme4jVersion}"
-
-    // Bouncy Castle (Cryptography)
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
-    implementation 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
-
-    // DNS providers
-    implementation 'software.amazon.awssdk:route53:2.27.0'
-    implementation 'com.google.cloud:google-cloud-dns:2.44.0'
-}
-```
-
-### Distribution Service Module (`distribution-service/build.gradle`)
-
-```groovy
-dependencies {
-    implementation project(':common')
-    implementation project(':domain')
-
-    // SSH/SFTP
-    implementation "com.hierynomus:sshj:${sshJVersion}"
-
-    // Vault (Credentials)
-    implementation 'org.springframework.vault:spring-vault-core:3.1.2'
-
-    // Redis (Queue)
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-}
-```
-
-### Web Server Integration Module (`webserver-integration/build.gradle`)
-
-```groovy
-dependencies {
-    implementation project(':common')
-    implementation project(':domain')
-
-    // Template Engine
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-
-    // YAML parsing
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-}
-```
-
-### Reload Service Module (`reload-service/build.gradle`)
-
-```groovy
-dependencies {
-    implementation project(':common')
-    implementation project(':domain')
-
-    // SSH for remote commands
-    implementation "com.hierynomus:sshj:${sshJVersion}"
-
-    // HTTP client for health checks
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-}
-```
-
-### Monitoring Service Module (`monitoring-service/build.gradle`)
-
-```groovy
-dependencies {
-    implementation project(':common')
-    implementation project(':domain')
-
-    // Actuator
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
-    // Micrometer (Prometheus)
-    implementation 'io.micrometer:micrometer-registry-prometheus'
-
-    // Email
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
-
-    // Slack
-    implementation 'com.slack.api:slack-api-client:1.40.3'
-}
-```
-
-### API Module (`api/build.gradle`)
-
-```groovy
-plugins {
-    id 'org.springframework.boot' version '3.4.0'
-}
-
-dependencies {
-    implementation project(':common')
-    implementation project(':domain')
-    implementation project(':certificate-manager')
-    implementation project(':distribution-service')
-    implementation project(':webserver-integration')
-    implementation project(':reload-service')
-    implementation project(':monitoring-service')
-
-    // Spring Boot Web
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // Spring Boot Security
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // JWT
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
-
-    // Swagger/OpenAPI
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
-
-    // Actuator
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-}
 ```
 
 ## 빌드 및 실행
@@ -725,4 +529,4 @@ jobs:
 ---
 
 **문서 버전**: 1.0
-**최종 수정일**: 2025-11-04
+**최종 수정일**: 2025-11-20

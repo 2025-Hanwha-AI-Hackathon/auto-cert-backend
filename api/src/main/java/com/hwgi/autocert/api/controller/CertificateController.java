@@ -1,6 +1,7 @@
 package com.hwgi.autocert.api.controller;
 
 import com.hwgi.autocert.api.dto.request.CertificateCreateRequest;
+import com.hwgi.autocert.api.dto.request.CertificateUpdateRequest;
 import com.hwgi.autocert.api.dto.response.CertificateResponse;
 import com.hwgi.autocert.api.dto.response.PageResponse;
 import com.hwgi.autocert.certificate.service.CertificateService;
@@ -57,23 +58,55 @@ public class CertificateController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CertificateResponse> createCertificate(
             @Valid @RequestBody CertificateCreateRequest request) {
-        log.info("Create certificate for domain: {}", request.getDomain());
+        log.info("Create certificate for domain: {}, autoDeploy: {}", 
+            request.getDomain(), request.getAutoDeploy());
         
         Certificate certificate = certificateService.create(
+                request.getServerId(),
                 request.getDomain(),
                 request.getChallengeType(),
                 request.getAdmin(),
-                request.getAlertDaysBeforeExpiry());
+                request.getAlertDaysBeforeExpiry(),
+                request.getAutoDeploy());
         CertificateResponse response = CertificateResponse.from(certificate);
         return ApiResponse.success(response, "인증서가 생성 성공");
     }
 
+    @Operation(summary = "인증서 수정", description = "인증서 정보 수정 (모든 필드 수정 가능)")
+    @PutMapping("/{id}")
+    public ApiResponse<CertificateResponse> updateCertificate(
+            @PathVariable Long id,
+            @Valid @RequestBody CertificateUpdateRequest request) {
+        log.info("Update certificate: {}", id);
+        
+        Certificate updated = certificateService.update(
+            id,
+            request.getDomain(),
+            request.getServerId(),
+            request.getIssuedAt(),
+            request.getExpiresAt(),
+            request.getStatus(),
+            request.getCertificatePem(),
+            request.getPrivateKeyPem(),
+            request.getChainPem(),
+            request.getPassword(),
+            request.getAdmin(),
+            request.getAlertDaysBeforeExpiry(),
+            request.getAutoDeploy()
+        );
+        
+        CertificateResponse response = CertificateResponse.from(updated);
+        return ApiResponse.success(response, "인증서가 수정되었습니다");
+    }
+
     @Operation(summary = "인증서 갱신", description = "만료 예정 인증서 수동 갱신")
     @PostMapping("/{id}/renew")
-    public ApiResponse<CertificateResponse> renewCertificate(@PathVariable Long id) {
-        log.info("Renew certificate: {}", id);
+    public ApiResponse<CertificateResponse> renewCertificate(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "false") Boolean autoDeploy) {
+        log.info("Renew certificate: {}, autoDeploy: {}", id, autoDeploy);
         
-        Certificate certificate = certificateService.renew(id);
+        Certificate certificate = certificateService.renew(id, autoDeploy);
         CertificateResponse response = CertificateResponse.from(certificate);
         return ApiResponse.success(response, "인증서 갱신 성공");
     }
