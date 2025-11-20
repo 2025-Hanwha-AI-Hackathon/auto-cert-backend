@@ -1,4 +1,4 @@
-package com.hwgi.autocert.api.service;
+package com.hwgi.autocert.server.service;
 
 import com.hwgi.autocert.common.constants.WebServerType;
 import com.hwgi.autocert.common.exception.ResourceNotFoundException;
@@ -163,3 +163,4 @@ public class ServerService {
         log.info("Server deleted successfully: id={}", id);
     }
 }
+

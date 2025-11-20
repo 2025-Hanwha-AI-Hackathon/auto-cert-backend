@@ -1,4 +1,4 @@
-package com.hwgi.autocert.api.dto.response;
+package com.hwgi.autocert.server.dto;
 
 import com.hwgi.autocert.domain.model.Server;
 import lombok.AllArgsConstructor;
@@ -47,3 +47,4 @@ public class ServerResponse {
                 .build();
     }
 }
+

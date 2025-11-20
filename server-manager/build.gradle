@@ -2,20 +2,17 @@ dependencies {
     // Internal dependencies
     implementation project(':common')
     implementation project(':domain')
-    implementation project(':server-manager')
-    implementation project(':certificate-manager')
 
     // Spring Boot Starters
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    // LangChain4j - OpenAI
-    implementation 'dev.langchain4j:langchain4j:0.35.0'
-    implementation 'dev.langchain4j:langchain4j-open-ai:0.35.0'
-    
-    // LangChain4j Spring Boot Starter
-    implementation 'dev.langchain4j:langchain4j-spring-boot-starter:0.35.0'
+    // Swagger/OpenAPI (for @Schema annotations)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+
+    // SSHJ (SSH/SFTP 클라이언트 - 서버 연결 검증용)
+    implementation 'com.hierynomus:sshj:0.38.0'
 }
 
 // Library module - disable bootJar
