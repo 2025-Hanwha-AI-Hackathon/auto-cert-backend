@@ -91,7 +91,7 @@ public class CertificateTools {
         }
     }
 
-    @Tool("Renew a certificate by ID. Use this when user explicitly asks to renew a specific certificate. Make sure you have the certificate ID before calling this.")
+    @Tool("Renew a certificate by ID. Use this ONLY after user explicitly confirms renewal. IMPORTANT: Before calling this, you MUST: 1) Search certificate by domain using searchCertificateByDomain, 2) Show certificate info to user, 3) Ask for confirmation, 4) ONLY if user confirms, call this tool with the certificate ID.")
     public String renewCertificate(Long certificateId) {
         log.info("Tool called: renewCertificate with id={}", certificateId);
         
@@ -100,19 +100,24 @@ public class CertificateTools {
             return String.format(
                 "✅ 인증서 갱신 성공!\n\n" +
                 "📄 인증서 정보:\n" +
-                "- ID: %d\n" +
                 "- 도메인: %s\n" +
                 "- 상태: %s\n" +
                 "- 새 만료일: %s\n\n" +
                 "인증서가 성공적으로 갱신되었습니다.",
-                renewed.getId(),
                 renewed.getDomain(),
                 translateStatus(renewed.getStatus().name()),
                 renewed.getExpiresAt() != null ? renewed.getExpiresAt().toLocalDate().toString() : "N/A"
             );
         } catch (Exception e) {
             log.error("Error renewing certificate", e);
-            return "❌ 인증서 갱신 중 오류가 발생했습니다: " + e.getMessage();
+            String errorMsg = e.getMessage();
+            return "❌ 인증서 갱신 실패\n\n" +
+                   "🔍 원인: " + errorMsg + "\n\n" +
+                   "💡 해결 방법:\n" +
+                   "1. 인증서 상태가 갱신 가능한지 확인해주세요\n" +
+                   "2. 도메인이 올바른지 확인해주세요\n" +
+                   "3. 잠시 후 다시 시도해주세요\n\n" +
+                   "📝 다시 시도하시겠습니까? 다른 도메인을 갱신하시겠습니까?";
         }
     }
 
@@ -151,7 +156,7 @@ public class CertificateTools {
         }
     }
 
-    @Tool("Create a new certificate for a domain. Use this when user wants to register, create, issue, or add a new certificate. Required: domain name. Optional: challenge type (default: DNS_01), admin name, alert days.")
+    @Tool("Create a new certificate for a domain. Use this ONLY after user explicitly confirms creation. IMPORTANT: This tool should be called ONLY after showing what will be created and getting user confirmation. Required: domain name. Optional: challenge type (default: dns-01), admin name, alert days.")
     public String createCertificate(
             String domain,
             String challengeType,
@@ -171,7 +176,7 @@ public class CertificateTools {
             Certificate cert = certificateService.create(
                 server.getId(),
                 domain,
-                challengeType != null ? challengeType : "DNS_01",
+                challengeType != null ? challengeType : "dns-01",
                 admin,
                 alertDaysBeforeExpiry != null ? alertDaysBeforeExpiry : 7,
                 false  // autoDeploy 기본값: false
@@ -190,16 +195,57 @@ public class CertificateTools {
                 "인증서가 성공적으로 생성되었습니다. ACME 프로토콜을 통해 자동으로 발급됩니다.",
                 cert.getId(),
                 cert.getDomain(),
-                challengeType != null ? challengeType : "DNS_01",
+                challengeType != null ? challengeType : "dns-01",
                 translateStatus(cert.getStatus().name()),
                 admin != null ? admin : "미지정",
                 alertDaysBeforeExpiry != null ? alertDaysBeforeExpiry : 7,
                 cert.getCreatedAt() != null ? cert.getCreatedAt().toLocalDate().toString() : "방금"
             );
+        } catch (IllegalStateException e) {
+            // 서버가 등록되지 않은 경우
+            log.error("Error creating certificate - no server registered", e);
+            return "❌ 인증서 생성 실패\n\n" +
+                   "🔍 원인: " + e.getMessage() + "\n\n" +
+                   "💡 해결 방법:\n" +
+                   "1. 웹 UI의 '서버 관리' 메뉴에서 서버를 먼저 등록해주세요\n" +
+                   "2. 서버 등록 후 다시 시도해주세요\n\n" +
+                   "📝 다시 시도하시겠습니까? 도메인 이름을 알려주세요.";
+        } catch (IllegalArgumentException e) {
+            // 도메인 형식이나 기타 인자 오류
+            log.error("Error creating certificate - invalid argument", e);
+            String errorMsg = e.getMessage().toLowerCase();
+            
+            if (errorMsg.contains("domain") || errorMsg.contains("도메인")) {
+                return "❌ 인증서 생성 실패\n\n" +
+                       "🔍 원인: 도메인 형식이 올바르지 않습니다\n\n" +
+                       "💡 올바른 도메인 형식:\n" +
+                       "- example.com\n" +
+                       "- subdomain.example.com\n" +
+                       "- example.co.kr\n\n" +
+                       "📝 올바른 도메인으로 다시 시도해주세요. 어떤 도메인을 등록하시겠습니까?";
+            } else if (errorMsg.contains("이미 존재") || errorMsg.contains("duplicate")) {
+                return "⚠️ 인증서 등록 불가\n\n" +
+                       "🔍 원인: 이미 등록된 도메인입니다\n\n" +
+                       "💡 다음 중 선택해주세요:\n" +
+                       "1. 기존 인증서를 갱신하시겠습니까?\n" +
+                       "2. 다른 도메인을 등록하시겠습니까?\n\n" +
+                       "어떻게 하시겠습니까?";
+            } else {
+                return "❌ 인증서 생성 실패\n\n" +
+                       "🔍 원인: " + e.getMessage() + "\n\n" +
+                       "💡 입력 정보를 확인해주세요\n\n" +
+                       "📝 다시 시도하시겠습니까? 도메인 이름을 알려주세요.";
+            }
         } catch (Exception e) {
+            // 기타 예외
             log.error("Error creating certificate", e);
-            return "❌ 인증서 생성 중 오류가 발생했습니다: " + e.getMessage() + 
-                   "\n\n💡 도메인이 올바른 형식인지 확인해주세요. (예: example.com)";
+            return "❌ 인증서 생성 중 예상치 못한 오류가 발생했습니다\n\n" +
+                   "🔍 오류 내용: " + e.getMessage() + "\n\n" +
+                   "💡 해결 방법:\n" +
+                   "1. 도메인 형식 확인 (예: example.com)\n" +
+                   "2. 서버가 등록되어 있는지 확인\n" +
+                   "3. 문제가 계속되면 관리자에게 문의\n\n" +
+                   "📝 다른 도메인으로 다시 시도하시겠습니까?";
         }
     }
 
@@ -216,7 +262,7 @@ public class CertificateTools {
         }
     }
 
-    @Tool("Delete a certificate by ID. Use this when user explicitly asks to delete or remove a certificate. WARNING: This action cannot be undone!")
+    @Tool("Delete a certificate by ID. Use this ONLY after user explicitly confirms deletion. IMPORTANT: Before calling this, you MUST: 1) Search certificate by domain using searchCertificateByDomain, 2) Show certificate info to user, 3) Warn about consequences, 4) Ask for confirmation, 5) ONLY if user confirms, call this tool with the certificate ID. This action cannot be undone!")
     public String deleteCertificate(Long certificateId) {
         log.info("Tool called: deleteCertificate with id={}", certificateId);
         
@@ -229,10 +275,8 @@ public class CertificateTools {
             return String.format(
                 "✅ 인증서가 성공적으로 삭제되었습니다.\n\n" +
                 "🗑️ 삭제된 인증서:\n" +
-                "- ID: %d\n" +
                 "- 도메인: %s\n\n" +
                 "⚠️ 이 작업은 되돌릴 수 없습니다.",
-                certificateId,
                 domain
             );
         } catch (Exception e) {
