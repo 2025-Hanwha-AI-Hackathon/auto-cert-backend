@@ -195,19 +195,19 @@ public class CertificateService {
      * 인증서 갱신 (ACME 프로토콜 통합)
      *
      * @param id 인증서 ID
-     * @param autoDeployOverride 서버에 자동 배포 여부 (null이면 저장된 설정 사용)
+     * @param autoDeploy 서버에 자동 배포 여부 (null이면 저장된 설정 사용)
      * @return 갱신된 인증서
      */
     @Transactional
-    public Certificate renew(Long id, Boolean autoDeployOverride) {
+    public Certificate renew(Long id, Boolean autoDeploy) {
         log.info("Renewing certificate: {}", id);
 
         Certificate certificate = findById(id);
         String domain = certificate.getDomain();
         
         // autoDeploy 결정: 파라미터가 있으면 우선 사용, 없으면 저장된 설정 사용
-        boolean shouldAutoDeploy = autoDeployOverride != null 
-            ? autoDeployOverride 
+        boolean shouldAutoDeploy = autoDeploy != null
+            ? autoDeploy
             : Boolean.TRUE.equals(certificate.getAutoDeploy());
 
         try {
@@ -253,7 +253,7 @@ public class CertificateService {
             // 6. 자동 배포 처리 (결정된 autoDeploy 설정 사용)
             if (shouldAutoDeploy) {
                 log.info("Auto-deployment enabled for renewed certificate: {} (override: {}, stored: {})", 
-                    renewed.getId(), autoDeployOverride, renewed.getAutoDeploy());
+                    renewed.getId(), autoDeploy, renewed.getAutoDeploy());
                 deployToServer(renewed);
             }
 
