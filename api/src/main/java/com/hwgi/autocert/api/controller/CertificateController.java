@@ -61,7 +61,9 @@ public class CertificateController {
         
         Certificate certificate = certificateService.create(
                 request.getDomain(),
-                request.getChallengeType());
+                request.getChallengeType(),
+                request.getAdmin(),
+                request.getAlertDaysBeforeExpiry());
         CertificateResponse response = CertificateResponse.from(certificate);
         return ApiResponse.success(response, "인증서가 생성 성공");
     }

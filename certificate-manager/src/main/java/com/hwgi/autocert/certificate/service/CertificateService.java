@@ -88,12 +88,13 @@ public class CertificateService {
      * 인증서 생성 (ACME 프로토콜 통합)
      *
      * @param domain 도메인명
-     * @param certificateType 인증서 타입 (미사용 - 향후 확장용)
      * @param challengeType 챌린지 타입 (http-01, dns-01)
+     * @param admin 관리자 또는 담당자
+     * @param alertDaysBeforeExpiry 만료 전 알림 일수
      * @return 생성된 인증서
      */
     @Transactional
-    public Certificate create(String domain, String challengeType) {
+    public Certificate create(String domain, String challengeType, String admin, Integer alertDaysBeforeExpiry) {
         log.info("Creating certificate for domain: {} with challengeType: {}", domain, challengeType);
 
         // 중복 확인
@@ -111,6 +112,8 @@ public class CertificateService {
             Certificate certificate = Certificate.builder()
                     .domain(domain)
                     .status(PENDING)
+                    .admin(admin)
+                    .alertDaysBeforeExpiry(alertDaysBeforeExpiry != null ? alertDaysBeforeExpiry : 7)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
