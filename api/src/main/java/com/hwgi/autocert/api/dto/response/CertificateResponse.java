@@ -25,6 +25,8 @@ public class CertificateResponse {
     private String status;
     private Integer renewalAttempts;
     private String lastError;
+    private String admin;
+    private Integer alertDaysBeforeExpiry;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -38,6 +40,8 @@ public class CertificateResponse {
                 .issuedAt(certificate.getIssuedAt())
                 .expiresAt(certificate.getExpiresAt())
                 .status(certificate.getStatus().name())
+                .admin(certificate.getAdmin())
+                .alertDaysBeforeExpiry(certificate.getAlertDaysBeforeExpiry())
                 .createdAt(certificate.getCreatedAt())
                 .updatedAt(certificate.getUpdatedAt())
                 .build();

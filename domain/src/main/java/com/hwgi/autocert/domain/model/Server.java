@@ -1,14 +1,19 @@
 package com.hwgi.autocert.domain.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.hwgi.autocert.common.constants.WebServerType;
+import com.hwgi.autocert.domain.converter.WebServerTypeConverter;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "servers")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Server {
 
     @Id
@@ -16,7 +21,7 @@ public class Server {
     private Long id;
 
     @Column(nullable = false)
-    private String hostname;
+    private String name;
 
     @Column(name = "ip_address", nullable = false, unique = true)
     private String ipAddress;
@@ -25,13 +30,35 @@ public class Server {
     private Integer port;
 
     @Column(name = "web_server_type", nullable = false)
-    private String webServerType;
+    @Convert(converter = WebServerTypeConverter.class)
+    private WebServerType webServerType;
+
+    @Column
+    private String description;
 
     @Column(nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column
     private String password;
 
-    // Getters and Setters
+    @Column(nullable = false)
+    private String deployPath;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

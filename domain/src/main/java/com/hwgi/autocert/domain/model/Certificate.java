@@ -1,5 +1,6 @@
 package com.hwgi.autocert.domain.model;
 
+import com.hwgi.autocert.domain.converter.CertificateStatusConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,8 +28,8 @@ public class Certificate {
     @Column(name = "expired_at")
     private LocalDateTime expiresAt;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
+    @Convert(converter = CertificateStatusConverter.class)
     private CertificateStatus status;
 
     @Lob
@@ -46,10 +47,17 @@ public class Certificate {
     @Column
     private String password;
 
+    @Column
+    private String admin;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer alertDaysBeforeExpiry = 7;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column()
     private LocalDateTime updatedAt;
 
     @PrePersist
