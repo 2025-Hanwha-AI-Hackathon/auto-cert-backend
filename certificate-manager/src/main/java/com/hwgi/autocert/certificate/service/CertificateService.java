@@ -10,7 +10,9 @@ import com.hwgi.autocert.domain.model.Certificate;
 import com.hwgi.autocert.domain.model.CertificateStatus;
 import com.hwgi.autocert.domain.repository.CertificateRepository;
 import com.hwgi.autocert.domain.repository.ServerRepository;
+import com.hwgi.autocert.domain.repository.DeploymentRepository;
 import com.hwgi.autocert.domain.model.Server;
+import com.hwgi.autocert.domain.model.Deployment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -43,6 +45,7 @@ public class CertificateService {
 
     private final CertificateRepository certificateRepository;
     private final ServerRepository serverRepository;
+    private final DeploymentRepository deploymentRepository;
     private final AcmeOrderService acmeOrderService;
     private final CertificateEncryptionUtil encryptionUtil;
     private final AcmeProperties acmeProperties;
@@ -386,12 +389,27 @@ public class CertificateService {
 
     /**
      * 인증서 삭제
+     * 인증서 삭제 전에 연관된 배포 이력을 먼저 삭제합니다.
      */
     @Transactional
     public void delete(Long id) {
         log.info("Deleting certificate: {}", id);
 
         Certificate certificate = findById(id);
+        
+        // 1. 연관된 배포 이력 삭제 (외래 키 제약 조건 위반 방지)
+        List<Deployment> deployments = deploymentRepository.findByCertificateIdOrderByDeployedAtDesc(
+            id, 
+            Pageable.unpaged()
+        ).getContent();
+        
+        if (!deployments.isEmpty()) {
+            log.info("Deleting {} deployment records associated with certificate: {}", 
+                deployments.size(), id);
+            deploymentRepository.deleteAll(deployments);
+        }
+        
+        // 2. 인증서 삭제
         certificateRepository.delete(certificate);
 
         log.info("Certificate deleted: {}", id);
