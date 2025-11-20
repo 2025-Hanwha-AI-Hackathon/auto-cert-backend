@@ -57,6 +57,12 @@ services:
 
       # CORS Configuration
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+
+      # AI Assistant Configuration
+      AI_ASSISTANT_API_KEY: ${AI_ASSISTANT_API_KEY}
+      AI_ASSISTANT_MODEL_NAME: ${AI_ASSISTANT_MODEL_NAME}
+      AI_ASSISTANT_TEMPERATURE: ${AI_ASSISTANT_TEMPERATURE}
+      AI_ASSISTANT_MAX_TOKENS: ${AI_ASSISTANT_MAX_TOKENS}
     depends_on:
       postgres:
         condition: service_healthy

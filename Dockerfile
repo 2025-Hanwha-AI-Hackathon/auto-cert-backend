@@ -10,6 +10,7 @@ COPY gradle.properties* ./
 COPY common/build.gradle ./common/
 COPY domain/build.gradle ./domain/
 COPY certificate-manager/build.gradle ./certificate-manager/
+COPY ai-assistant/build.gradle ./ai-assistant/
 COPY api/build.gradle ./api/
 
 # Download dependencies (this layer will be cached unless build files change)
@@ -19,6 +20,7 @@ RUN gradle build --no-daemon -x test -x compileJava -x compileTestJava || return
 COPY common/src ./common/src
 COPY domain/src ./domain/src
 COPY certificate-manager/src ./certificate-manager/src
+COPY ai-assistant/src ./ai-assistant/src
 COPY api/src ./api/src
 
 # Build the application
