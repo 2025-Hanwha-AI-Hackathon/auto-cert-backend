@@ -2,6 +2,7 @@ package com.hwgi.autocert.api.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
@@ -13,6 +14,10 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class CertificateCreateRequest {
+
+    @Schema(description = "서버 ID", example = "1")
+    @NotNull(message = "서버 ID는 필수입니다")
+    private Long serverId;
 
     @Schema(example = "example.com", description = "인증서를 발급받을 도메인")
     @NotBlank(message = "도메인은 필수입니다")
@@ -28,4 +33,7 @@ public class CertificateCreateRequest {
     @Schema(description = "만료 전 알림 일수 (기본값: 7일)", example = "7")
     @Min(value = 1, message = "알림 일수는 1일 이상이어야 합니다")
     private Integer alertDaysBeforeExpiry;
+
+    @Schema(description = "서버에 자동 배포 여부 (기본값: false)", example = "false")
+    private Boolean autoDeploy = false;
 }

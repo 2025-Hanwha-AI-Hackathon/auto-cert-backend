@@ -1,0 +1,9 @@
+autocert:
+  distribution:
+    ssh:
+      timeout: 30000          # SSH 연결 타임아웃 (30초)
+      max-retries: 3          # 최대 재시도 횟수
+      retry-delay: 1000       # 재시도 대기 시간 (1초)
+      port: 22                # SSH 포트
+      default-cert-path: /etc/ssl/certs    # 기본 인증서 경로
+      default-key-path: /etc/ssl/private   # 기본 개인키 경로

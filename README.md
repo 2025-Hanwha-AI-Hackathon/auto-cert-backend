@@ -39,9 +39,7 @@ ACME 프로토콜 기반 자동 갱신 흐름
 각 서비스 모듈의 내부 구조
 
 - Certificate Manager (ACME Client, Renewal Scheduler)
-- Distribution Service (SSH Manager, Credential Vault)
 - Web Server Integration (Config Generator, Server Adapter)
-- Reload Service (Health Checker, Rollback Manager)
 - Monitoring Dashboard (Expiry Tracker, Alert Manager)
 
 #### 5. [모니터링 대시보드](mermaid/05-monitoring-dashboard.mmd)
@@ -188,28 +186,16 @@ java -jar api/build/libs/api-1.0.0-SNAPSHOT.jar
 
 ```
 auto-cert/
-├── docker/
-│   └── nginx/
-│       ├── nginx.conf                     # Nginx 메인 설정
-│       ├── conf.d/
-│       │   ├── default.conf               # localhost (활성)
-│       │   └── ctrl-ai-shop.conf.example  # 도메인 템플릿
-│       └── html/
-│           └── index.html                 # Welcome 페이지
 ├── certs/                                 # 인증서 디렉토리
 │   ├── localhost.crt                      # Self-signed
 │   ├── localhost.key
 │   └── .gitkeep                           # Git 추적용
-├── logs/
-│   └── nginx/                             # Nginx 로그
 ├── mermaid/                               # 아키텍처 다이어그램
 ├── docs/                                  # 설계 문서
 ├── common/                                # 공통 유틸리티
 ├── domain/                                # 도메인 모델
 ├── certificate-manager/                   # 인증서 관리
-├── distribution-service/                  # 배포 서비스
 ├── webserver-integration/                 # 웹서버 통합
-├── reload-service/                        # 재시작 서비스
 ├── monitoring-service/                    # 모니터링
 ├── api/                                   # API Gateway (Main)
 └── docker-compose.yml                     # Docker 설정
@@ -245,5 +231,5 @@ auto-cert/
 ---
 
 **문서 버전**: 1.1.0
-**최종 수정일**: 2025-11-15
+**최종 수정일**: 2025-11-20
 **작성자**: Auto-Cert Development Team

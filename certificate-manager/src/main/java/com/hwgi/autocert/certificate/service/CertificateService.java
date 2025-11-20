@@ -4,10 +4,13 @@ import com.hwgi.autocert.certificate.acme.challenge.ChallengeType;
 import com.hwgi.autocert.certificate.acme.service.AcmeOrderService;
 import com.hwgi.autocert.certificate.config.AcmeProperties;
 import com.hwgi.autocert.certificate.util.CertificateEncryptionUtil;
+import com.hwgi.autocert.certificate.distribution.service.CertificateDistributionService;
 import com.hwgi.autocert.common.exception.ResourceNotFoundException;
 import com.hwgi.autocert.domain.model.Certificate;
 import com.hwgi.autocert.domain.model.CertificateStatus;
 import com.hwgi.autocert.domain.repository.CertificateRepository;
+import com.hwgi.autocert.domain.repository.ServerRepository;
+import com.hwgi.autocert.domain.model.Server;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +28,8 @@ import java.util.List;
 
 import static com.hwgi.autocert.domain.model.CertificateStatus.*;
 
+
+
 /**
  * 인증서 관리 서비스
  * MVP: 기본 CRUD 기능 제공
@@ -37,9 +42,11 @@ import static com.hwgi.autocert.domain.model.CertificateStatus.*;
 public class CertificateService {
 
     private final CertificateRepository certificateRepository;
+    private final ServerRepository serverRepository;
     private final AcmeOrderService acmeOrderService;
     private final CertificateEncryptionUtil encryptionUtil;
     private final AcmeProperties acmeProperties;
+    private final CertificateDistributionService distributionService;
 
     /**
      * 모든 인증서 조회 (페이지네이션)
@@ -87,15 +94,21 @@ public class CertificateService {
     /**
      * 인증서 생성 (ACME 프로토콜 통합)
      *
+     * @param serverId 서버 ID
      * @param domain 도메인명
      * @param challengeType 챌린지 타입 (http-01, dns-01)
      * @param admin 관리자 또는 담당자
      * @param alertDaysBeforeExpiry 만료 전 알림 일수
+     * @param autoDeploy 서버에 자동 배포 여부
      * @return 생성된 인증서
      */
     @Transactional
-    public Certificate create(String domain, String challengeType, String admin, Integer alertDaysBeforeExpiry) {
-        log.info("Creating certificate for domain: {} with challengeType: {}", domain, challengeType);
+    public Certificate create(Long serverId, String domain, String challengeType, String admin, Integer alertDaysBeforeExpiry, Boolean autoDeploy) {
+        log.info("Creating certificate for domain: {} with challengeType: {}, serverId: {}", domain, challengeType, serverId);
+
+        // 서버 조회
+        Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new ResourceNotFoundException("서버를 찾을 수 없습니다: " + serverId));
 
         // 중복 확인
         if (certificateRepository.existsByDomain(domain)) {
@@ -110,10 +123,12 @@ public class CertificateService {
         try {
             // 1. 상태를 PENDING으로 DB에 먼저 저장
             Certificate certificate = Certificate.builder()
+                    .server(server)
                     .domain(domain)
                     .status(PENDING)
                     .admin(admin)
                     .alertDaysBeforeExpiry(alertDaysBeforeExpiry != null ? alertDaysBeforeExpiry : 7)
+                    .autoDeploy(autoDeploy != null ? autoDeploy : false)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
@@ -154,6 +169,12 @@ public class CertificateService {
             log.info("Certificate issued and saved successfully for domain: {}, expires at: {}",
                 domain, expiresAt);
 
+            // 6. 자동 배포 처리 (저장된 autoDeploy 설정 사용)
+            if (Boolean.TRUE.equals(saved.getAutoDeploy())) {
+                log.info("Auto-deployment enabled for certificate: {}", saved.getId());
+                deployToServer(saved);
+            }
+
             return saved;
 
         } catch (Exception e) {
@@ -174,14 +195,20 @@ public class CertificateService {
      * 인증서 갱신 (ACME 프로토콜 통합)
      *
      * @param id 인증서 ID
+     * @param autoDeployOverride 서버에 자동 배포 여부 (null이면 저장된 설정 사용)
      * @return 갱신된 인증서
      */
     @Transactional
-    public Certificate renew(Long id) {
+    public Certificate renew(Long id, Boolean autoDeployOverride) {
         log.info("Renewing certificate: {}", id);
 
         Certificate certificate = findById(id);
         String domain = certificate.getDomain();
+        
+        // autoDeploy 결정: 파라미터가 있으면 우선 사용, 없으면 저장된 설정 사용
+        boolean shouldAutoDeploy = autoDeployOverride != null 
+            ? autoDeployOverride 
+            : Boolean.TRUE.equals(certificate.getAutoDeploy());
 
         try {
             // 1. 상태를 RENEWING으로 업데이트
@@ -223,6 +250,13 @@ public class CertificateService {
             log.info("Certificate renewed successfully for domain: {}, new expiry: {}",
                 domain, expiresAt);
 
+            // 6. 자동 배포 처리 (결정된 autoDeploy 설정 사용)
+            if (shouldAutoDeploy) {
+                log.info("Auto-deployment enabled for renewed certificate: {} (override: {}, stored: {})", 
+                    renewed.getId(), autoDeployOverride, renewed.getAutoDeploy());
+                deployToServer(renewed);
+            }
+
             return renewed;
 
         } catch (Exception e) {
@@ -235,6 +269,113 @@ public class CertificateService {
 
             throw new RuntimeException("인증서 갱신 실패: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 인증서 정보 수정
+     * 
+     * @param id 인증서 ID
+     * @param domain 도메인 (nullable)
+     * @param serverId 서버 ID (nullable)
+     * @param issuedAt 발급 일시 (nullable)
+     * @param expiresAt 만료 일시 (nullable)
+     * @param status 상태 (nullable)
+     * @param certificatePem 인증서 PEM (nullable)
+     * @param privateKeyPem 개인키 PEM (nullable)
+     * @param chainPem 체인 PEM (nullable)
+     * @param password 비밀번호 (nullable)
+     * @param admin 관리자 (nullable)
+     * @param alertDaysBeforeExpiry 알림 일수 (nullable)
+     * @param autoDeploy 자동 배포 여부 (nullable)
+     * @return 수정된 인증서
+     */
+    @Transactional
+    public Certificate update(
+            Long id,
+            String domain,
+            Long serverId,
+            LocalDateTime issuedAt,
+            LocalDateTime expiresAt,
+            CertificateStatus status,
+            String certificatePem,
+            String privateKeyPem,
+            String chainPem,
+            String password,
+            String admin,
+            Integer alertDaysBeforeExpiry,
+            Boolean autoDeploy) {
+        log.info("Updating certificate: {}", id);
+        
+        Certificate certificate = findById(id);
+        
+        // 도메인 수정
+        if (domain != null) {
+            certificate.setDomain(domain);
+        }
+        
+        // 서버 수정
+        if (serverId != null) {
+            Server server = serverRepository.findById(serverId)
+                .orElseThrow(() -> new IllegalArgumentException("서버를 찾을 수 없습니다: " + serverId));
+            certificate.setServer(server);
+        }
+        
+        // 발급 일시 수정
+        if (issuedAt != null) {
+            certificate.setIssuedAt(issuedAt);
+        }
+        
+        // 만료 일시 수정
+        if (expiresAt != null) {
+            certificate.setExpiresAt(expiresAt);
+        }
+        
+        // 상태 수정
+        if (status != null) {
+            certificate.setStatus(status);
+        }
+        
+        // 인증서 PEM 수정
+        if (certificatePem != null) {
+            certificate.setCertificatePem(certificatePem);
+        }
+        
+        // 개인키 PEM 수정
+        if (privateKeyPem != null) {
+            certificate.setPrivateKeyPem(privateKeyPem);
+        }
+        
+        // 체인 PEM 수정
+        if (chainPem != null) {
+            certificate.setChainPem(chainPem);
+        }
+        
+        // 비밀번호 수정
+        if (password != null) {
+            certificate.setPassword(password);
+        }
+        
+        // 관리자 수정
+        if (admin != null) {
+            certificate.setAdmin(admin);
+        }
+        
+        // 알림 일수 수정
+        if (alertDaysBeforeExpiry != null) {
+            certificate.setAlertDaysBeforeExpiry(alertDaysBeforeExpiry);
+        }
+        
+        // 자동 배포 여부 수정
+        if (autoDeploy != null) {
+            certificate.setAutoDeploy(autoDeploy);
+        }
+        
+        certificate.setUpdatedAt(LocalDateTime.now());
+        
+        Certificate updated = certificateRepository.save(certificate);
+        log.info("Certificate updated: {}", id);
+        
+        return updated;
     }
 
     /**
@@ -290,6 +431,45 @@ public class CertificateService {
         CertificateFactory factory = CertificateFactory.getInstance("X.509");
         ByteArrayInputStream inputStream = new ByteArrayInputStream(certificatePem.getBytes());
         return (X509Certificate) factory.generateCertificate(inputStream);
+    }
+
+    /**
+     * 서버에 인증서 배포
+     * 
+     * @param certificate 배포할 인증서
+     */
+    private void deployToServer(Certificate certificate) {
+        try {
+            log.info("Starting deployment for certificate: {}", certificate.getId());
+            
+            // 배포 준비 상태 확인
+            if (!distributionService.isReadyForDeployment(certificate)) {
+                log.warn("Certificate {} is not ready for deployment", certificate.getId());
+                return;
+            }
+
+            // 개인키 복호화
+            String decryptedPrivateKey = decryptPrivateKey(certificate);
+
+            // 배포 실행
+            boolean deploymentSuccess = distributionService.deploy(certificate, decryptedPrivateKey);
+            
+            if (deploymentSuccess) {
+                log.info("Certificate {} deployed successfully to server {}", 
+                    certificate.getId(), 
+                    certificate.getServer().getName());
+            } else {
+                log.error("Failed to deploy certificate {} to server {}", 
+                    certificate.getId(), 
+                    certificate.getServer().getName());
+            }
+            
+        } catch (Exception e) {
+            log.error("Error during certificate deployment for certificate: {}", 
+                certificate.getId(), e);
+            // 배포 실패는 인증서 생성/갱신을 실패시키지 않음
+            // 나중에 수동으로 재배포 가능
+        }
     }
 
 }

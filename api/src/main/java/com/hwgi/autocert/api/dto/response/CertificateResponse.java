@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 public class CertificateResponse {
 
     private Long id;
+    private Long serverId;
     private String domain;
     private String issuer;
     private LocalDateTime issuedAt;
@@ -27,6 +28,7 @@ public class CertificateResponse {
     private String lastError;
     private String admin;
     private Integer alertDaysBeforeExpiry;
+    private Boolean autoDeploy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -36,12 +38,14 @@ public class CertificateResponse {
     public static CertificateResponse from(Certificate certificate) {
         return CertificateResponse.builder()
                 .id(certificate.getId())
+                .serverId(certificate.getServer() != null ? certificate.getServer().getId() : null)
                 .domain(certificate.getDomain())
                 .issuedAt(certificate.getIssuedAt())
                 .expiresAt(certificate.getExpiresAt())
                 .status(certificate.getStatus().name())
                 .admin(certificate.getAdmin())
                 .alertDaysBeforeExpiry(certificate.getAlertDaysBeforeExpiry())
+                .autoDeploy(certificate.getAutoDeploy())
                 .createdAt(certificate.getCreatedAt())
                 .updatedAt(certificate.getUpdatedAt())
                 .build();

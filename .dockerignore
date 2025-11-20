@@ -3,10 +3,10 @@
 .gitignore
 .gitattributes
 
-# Gradle
+# Gradle (Docker 내부에서 빌드하므로 로컬 빌드 결과물 제외)
 .gradle
 **/build
-!gradle/wrapper/gradle-wrapper.jar
+gradle-wrapper.jar.txt
 
 # IDE
 .idea
@@ -34,6 +34,7 @@ Thumbs.db
 docs
 *.md
 !README.md
+!CLAUDE.md
 
 # CI/CD
 .github
@@ -44,3 +45,14 @@ node_modules
 # Test
 **/test-results
 **/coverage
+
+# Docker 관련 (빌드 속도 향상)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# 임시 파일
+*.tmp
+*.bak
+*.swp
+*~

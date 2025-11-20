@@ -22,6 +22,10 @@ public class Certificate {
     @Column(nullable = false, unique = true)
     private String domain;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "server_id", nullable = false)
+    private Server server;
+
     @Column(name = "issued_at")
     private LocalDateTime issuedAt;
 
@@ -53,6 +57,10 @@ public class Certificate {
     @Builder.Default
     @Column(nullable = false)
     private Integer alertDaysBeforeExpiry = 7;
+
+    @Builder.Default
+    @Column(name = "auto_deploy", nullable = false)
+    private Boolean autoDeploy = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
