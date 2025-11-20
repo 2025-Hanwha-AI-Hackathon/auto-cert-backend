@@ -152,6 +152,9 @@ public class CertificateService {
                 .toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
+            
+            log.info("NEW certificate issued - Domain: {}, Serial: {}, IssuedAt: {}, ExpiresAt: {}", 
+                domain, x509Cert.getSerialNumber(), issuedAt, expiresAt);
 
             // 4. 개인키 암호화
             String encryptedPrivateKey = encryptionUtil.encrypt(result.getPrivateKeyPem());
@@ -233,6 +236,9 @@ public class CertificateService {
                 .toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
+            
+            log.info("RENEWED certificate details - Domain: {}, Serial: {}, IssuedAt: {}, ExpiresAt: {}", 
+                domain, x509Cert.getSerialNumber(), issuedAt, expiresAt);
 
             // 4. 개인키 암호화
             String encryptedPrivateKey = encryptionUtil.encrypt(result.getPrivateKeyPem());

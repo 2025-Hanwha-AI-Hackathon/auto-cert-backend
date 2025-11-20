@@ -59,8 +59,9 @@ public class AcmeOrderService {
         Account account = acmeAccountService.getAcmeAccount(acmeAccount);
         
         // 2. 도메인 키페어 생성 (인증서용)
+        // 매번 새로운 키페어 생성으로 항상 새로운 인증서 발급
         KeyPair domainKeyPair = KeyPairUtils.createKeyPair(2048);
-        log.debug("Domain key pair generated");
+        log.info("New domain key pair generated for fresh certificate issuance");
 
         // 3. 주문 생성
         Order order = account.newOrder()
