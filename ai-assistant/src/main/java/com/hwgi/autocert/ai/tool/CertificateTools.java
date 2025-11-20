@@ -2,6 +2,8 @@ package com.hwgi.autocert.ai.tool;
 
 import com.hwgi.autocert.certificate.service.CertificateService;
 import com.hwgi.autocert.domain.model.Certificate;
+import com.hwgi.autocert.domain.model.Server;
+import com.hwgi.autocert.domain.repository.ServerRepository;
 import dev.langchain4j.agent.tool.Tool;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class CertificateTools {
 
     private final CertificateService certificateService;
+    private final ServerRepository serverRepository;
 
     @Tool("Get all certificates list. Use this when user asks to see all certificates or certificate list.")
     public String getAllCertificates() {
@@ -93,7 +96,7 @@ public class CertificateTools {
         log.info("Tool called: renewCertificate with id={}", certificateId);
         
         try {
-            Certificate renewed = certificateService.renew(certificateId);
+            Certificate renewed = certificateService.renew(certificateId, null);
             return String.format(
                 "✅ 인증서 갱신 성공!\n\n" +
                 "📄 인증서 정보:\n" +
@@ -158,11 +161,20 @@ public class CertificateTools {
                  domain, challengeType, admin, alertDaysBeforeExpiry);
         
         try {
+            // 첫 번째 서버 조회
+            Server server = serverRepository.findAll(PageRequest.of(0, 1))
+                .getContent()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("등록된 서버가 없습니다. 먼저 서버를 등록해주세요."));
+            
             Certificate cert = certificateService.create(
+                server.getId(),
                 domain,
                 challengeType != null ? challengeType : "DNS_01",
                 admin,
-                alertDaysBeforeExpiry != null ? alertDaysBeforeExpiry : 7
+                alertDaysBeforeExpiry != null ? alertDaysBeforeExpiry : 7,
+                false  // autoDeploy 기본값: false
             );
             
             return String.format(
