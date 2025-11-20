@@ -142,6 +142,43 @@ public class SshClient {
     }
 
     /**
+     * sudo 명령 실행 (비밀번호 자동 입력)
+     *
+     * @param ssh SSH 클라이언트
+     * @param command 실행할 명령 (sudo 제외)
+     * @param password sudo 비밀번호
+     * @return 명령 출력
+     */
+    public String executeSudoCommand(SSHClient ssh, String command, String password) throws IOException {
+        log.debug("Executing sudo command: {}", command);
+
+        try (var session = ssh.startSession();
+             var cmd = session.exec("sudo -S " + command)) {
+
+            // sudo 비밀번호 입력 (stdin으로 전달)
+            var outputStream = cmd.getOutputStream();
+            outputStream.write((password + "\n").getBytes());
+            outputStream.flush();
+
+            // 명령 출력 읽기
+            String output = new String(cmd.getInputStream().readAllBytes());
+            String error = new String(cmd.getErrorStream().readAllBytes());
+
+            cmd.join(properties.getSsh().getTimeout(), java.util.concurrent.TimeUnit.MILLISECONDS);
+
+            int exitStatus = cmd.getExitStatus();
+
+            if (exitStatus != 0) {
+                log.warn("Sudo command failed with exit code {}: {}", exitStatus, error);
+                throw new IOException("Sudo command execution failed: " + error);
+            }
+
+            log.info("Sudo command executed successfully: {}", command);
+            return output;
+        }
+    }
+
+    /**
      * 연결 종료
      *
      * @param ssh SSH 클라이언트

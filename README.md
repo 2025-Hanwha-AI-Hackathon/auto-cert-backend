@@ -65,7 +65,7 @@ ERD 및 테이블 정의
 Spring Boot 멀티 모듈 의존성 관계
 
 - Application Layer: api
-- Service Layer: certificate-manager, distribution-service, etc.
+- Service Layer: certificate-manager
 - Core Layer: domain
 - Foundation Layer: common
 
@@ -194,8 +194,6 @@ auto-cert/
 ├── docs/                                  # 설계 문서
 ├── common/                                # 공통 유틸리티
 ├── domain/                                # 도메인 모델
-├── certificate-manager/                   # 인증서 관리
-├── webserver-integration/                 # 웹서버 통합
 ├── monitoring-service/                    # 모니터링
 ├── api/                                   # API Gateway (Main)
 └── docker-compose.yml                     # Docker 설정

@@ -84,31 +84,6 @@ auto-cert/
 │           ├── java/com/hwgi/autocert/certificate/
 │           └── resources/
 │
-├── webserver-integration/            # 웹서버 통합 모듈
-│   ├── build.gradle
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/hwgi/autocert/webserver/
-│       │   │   ├── adapter/         # 서버 어댑터
-│       │   │   │   ├── nginx/
-│       │   │   │   ├── apache/
-│       │   │   │   ├── tomcat/
-│       │   │   │   └── iis/
-│       │   │   ├── config/          # 설정 생성
-│       │   │   │   └── generator/
-│       │   │   ├── validator/       # 설정 검증
-│       │   │   ├── backup/          # 백업 관리
-│       │   │   └── config/
-│       │   └── resources/
-│       │       ├── templates/       # 설정 템플릿
-│       │       │   ├── nginx/
-│       │       │   ├── apache/
-│       │       │   └── tomcat/
-│       │       └── application-webserver.yml
-│       └── test/
-│           ├── java/com/hwgi/autocert/webserver/
-│           └── resources/
-│
 ├── monitoring-service/               # 모니터링 서비스 모듈
 │   ├── build.gradle
 │   └── src/
@@ -164,10 +139,6 @@ api
  └─> domain
 
 certificate-manager
- ├─> domain
- └─> common
-
-webserver-integration
  ├─> domain
  └─> common
 
@@ -518,13 +489,13 @@ jobs:
 
 1. ✅ 프로젝트 구조 설계 완료
 2. ✅ 공통 모듈 구현
-3. 🔲 도메인 모델 정의
-4. 🔲 데이터베이스 스키마 작성 (Flyway)
-5. 🔲 Certificate Manager 구현
-6. 🔲 API 엔드포인트 개발
-7. 🔲 테스트 코드 작성
-8. 🔲 Docker 컨테이너화
-9. 🔲 CI/CD 파이프라인 구축
+3. ✅ 도메인 모델 정의
+4. ✅ 데이터베이스 스키마 작성 (Flyway)
+5. ✅ Certificate Manager 구현
+6. ✅ API 엔드포인트 개발
+7. ✅ 테스트 코드 작성
+8. ✅ Docker 컨테이너화
+9. ✅ CI/CD 파이프라인 구축
 
 ---
 

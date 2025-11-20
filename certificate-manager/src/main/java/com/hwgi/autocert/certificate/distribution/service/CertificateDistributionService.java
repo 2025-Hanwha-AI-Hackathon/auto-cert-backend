@@ -68,7 +68,9 @@ public class CertificateDistributionService {
             String chainPath = deployPath + "/" + certificate.getDomain() + "-chain.crt";
 
             // 3. 인증서 파일 업로드
-            log.info("Uploading certificate files to {}", deployPath);
+            log.info("Uploading certificate files to {} - Certificate ID: {}, Domain: {}, IssuedAt: {}, ExpiresAt: {}", 
+                deployPath, certificate.getId(), certificate.getDomain(), 
+                certificate.getIssuedAt(), certificate.getExpiresAt());
             sshClient.uploadContent(ssh, certificate.getCertificatePem(), certPath);
             sshClient.uploadContent(ssh, decryptedPrivateKey, keyPath);
 
@@ -83,6 +85,9 @@ public class CertificateDistributionService {
 
             log.info("Certificate {} deployed successfully to server {} in {}ms",
                     certificate.getId(), server.getName(), duration);
+
+            // 5. Nginx 재기동 (서버 타입이 NGINX인 경우)
+            reloadNginxIfNeeded(ssh, server);
 
             return true;
 
@@ -172,6 +177,41 @@ public class CertificateDistributionService {
         deployment.setMessage(message);
         deployment.setDurationMs(durationMs);
         deploymentRepository.save(deployment);
+    }
+
+    /**
+     * Nginx 재기동 (서버 타입이 NGINX인 경우에만)
+     *
+     * @param ssh SSH 클라이언트
+     * @param server 서버
+     */
+    private void reloadNginxIfNeeded(SSHClient ssh, Server server) {
+        // Nginx 서버가 아닌 경우 스킵
+        if (!"nginx".equalsIgnoreCase(server.getWebServerType().getCode())) {
+            log.debug("Server {} is not Nginx type, skipping reload", server.getName());
+            return;
+        }
+
+        try {
+            log.info("Starting Nginx reload for server {}", server.getName());
+
+            // 1. Nginx 설정 테스트 (sudo 비밀번호 자동 입력)
+            log.debug("Testing Nginx configuration");
+            String testResult = sshClient.executeSudoCommand(ssh, "nginx -t", server.getPassword());
+            log.info("Nginx configuration test passed: {}", testResult);
+
+            // 2. Nginx 재기동 (graceful reload with sudo)
+            log.debug("Reloading Nginx service");
+            String reloadResult = sshClient.executeSudoCommand(ssh, "nginx -s reload", server.getPassword());
+            log.info("Nginx reloaded successfully: {}", reloadResult);
+
+        } catch (Exception e) {
+            // Nginx 재기동 실패는 배포 전체를 실패시키지 않음
+            // 인증서는 이미 배포되었으므로 수동 재기동 가능
+            log.error("Failed to reload Nginx on server {}: {}", 
+                server.getName(), e.getMessage(), e);
+            log.warn("Certificate files are deployed, but Nginx reload failed. Manual reload required.");
+        }
     }
 
     /**
