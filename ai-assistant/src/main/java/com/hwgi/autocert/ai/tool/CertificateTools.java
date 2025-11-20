@@ -261,19 +261,17 @@ public class CertificateTools {
                    "등록된 서버가 없습니다.\n" +
                    "인증서를 생성하려면 먼저 배포할 서버 정보가 필요합니다.\n\n" +
                    "💡 **해결 방법 (필수)**\n" +
-                   "**다음 단계를 따라주세요:**\n\n" +
-                   "1️⃣ 웹 페이지 왼쪽 메뉴에서 '서버 관리' 클릭\n" +
-                   "2️⃣ '서버 추가' 버튼 클릭\n" +
-                   "3️⃣ 서버 정보 입력:\n" +
-                   "   - 서버 이름: 예) Production Server\n" +
-                   "   - 호스트: 서버 IP 또는 도메인\n" +
-                   "   - 포트: SSH 포트 (기본 22)\n" +
-                   "   - 사용자명: SSH 접속 계정\n" +
-                   "   - 비밀번호: SSH 비밀번호\n" +
-                   "4️⃣ 저장 후 이 대화창으로 돌아오세요\n\n" +
-                   "📝 **서버 등록 후 알려주세요**\n" +
-                   "서버 등록을 완료하셨다면 '서버 등록 완료했어' 라고 말씀해주시고,\n" +
-                   "다시 등록하실 도메인 이름을 알려주세요.";
+                   "다음 방법 중 하나를 선택해주세요:\n\n" +
+                   "1️⃣ **채팅으로 서버 등록하기 (추천)**\n" +
+                   "   → '서버 등록하고 싶어' 라고 말씀해주세요\n" +
+                   "   → 필요한 정보를 순서대로 안내해드립니다\n" +
+                   "   → 등록 완료 후 다시 인증서를 생성하시면 됩니다\n\n" +
+                   "2️⃣ **웹 UI에서 직접 등록하기**\n" +
+                   "   → 웹 페이지 왼쪽 메뉴에서 '서버 관리' 클릭\n" +
+                   "   → '서버 추가' 버튼 클릭\n" +
+                   "   → 서버 정보 입력 (IP, 포트, 사용자명, 비밀번호)\n" +
+                   "   → 저장 후 이 대화창으로 돌아오세요\n\n" +
+                   "어떤 방법을 선택하시겠습니까?";
         } catch (IllegalArgumentException e) {
             // 도메인 형식이나 기타 인자 오류
             log.error("Error creating certificate - invalid argument", e);
@@ -334,7 +332,52 @@ public class CertificateTools {
             String detailedCause = "";
             String solution = "";
             
-            if (errorMsg != null && (errorMsg.contains("DNS") || errorMsg.contains("dns"))) {
+            // Cloudflare Zone 관련 에러 (가장 구체적으로 먼저 체크)
+            if ((errorMsg != null && (errorMsg.contains("Zone not found") || errorMsg.contains("Cloudflare zone ID"))) ||
+                (causeMsg != null && (causeMsg.contains("Zone not found") || causeMsg.contains("Cloudflare zone ID")))) {
+                String zoneDomain = domain;
+                if (domain.split("\\.").length > 2) {
+                    String[] parts = domain.split("\\.");
+                    zoneDomain = parts[parts.length - 2] + "." + parts[parts.length - 1];
+                }
+                
+                return "❌ 인증서 생성 실패\n\n" +
+                       "🔍 **실패 원인: Cloudflare Zone을 찾을 수 없습니다**\n" +
+                       "'" + domain + "' 도메인의 Cloudflare Zone이 존재하지 않거나 접근할 수 없습니다.\n" +
+                       "(Zone 도메인: " + zoneDomain + ")\n\n" +
+                       "💡 **해결 방법 (다음 단계를 순서대로 확인하세요)**\n\n" +
+                       "**1️⃣ Cloudflare에 도메인 등록 확인**\n" +
+                       "   ① Cloudflare 대시보드 접속: https://dash.cloudflare.com/\n" +
+                       "   ② 좌측 메뉴에서 'Websites' 클릭\n" +
+                       "   ③ '" + zoneDomain + "' 도메인이 목록에 있는지 확인\n" +
+                       "   ④ 도메인이 **없다면**: 'Add a Site' 버튼으로 도메인 추가 필요\n" +
+                       "   ⑤ 도메인이 **있다면**: 상태가 'Active'인지 확인\n\n" +
+                       "**2️⃣ 도메인 상태 확인**\n" +
+                       "   • 상태가 'Pending'이라면:\n" +
+                       "     → 도메인 등록대행사에서 네임서버를 Cloudflare로 변경해야 합니다\n" +
+                       "     → Cloudflare가 제공한 네임서버 주소로 설정\n" +
+                       "     → 예: ns1.cloudflare.com, ns2.cloudflare.com\n" +
+                       "   • 상태가 'Active'라면:\n" +
+                       "     → 3단계 API 토큰 확인으로 이동\n\n" +
+                       "**3️⃣ API 토큰 권한 확인**\n" +
+                       "   ① Cloudflare 대시보드 → 프로필 → 'API Tokens'\n" +
+                       "   ② 현재 사용 중인 토큰 찾기\n" +
+                       "   ③ 'Edit' 클릭하여 다음 확인:\n" +
+                       "      • Zone Resources: 'All zones' 또는 '" + zoneDomain + "' 포함\n" +
+                       "      • Permissions: 'Zone:Read', 'DNS:Edit' 권한 보유\n\n" +
+                       "**4️⃣ 도메인 추가 방법 (등록되지 않은 경우)**\n" +
+                       "   ① Cloudflare 대시보드에서 'Add a Site' 클릭\n" +
+                       "   ② 도메인 입력: " + zoneDomain + "\n" +
+                       "   ③ 플랜 선택: Free 플랜 선택 가능\n" +
+                       "   ④ DNS 레코드 스캔 대기\n" +
+                       "   ⑤ 네임서버 변경:\n" +
+                       "      • 도메인 등록대행사 접속\n" +
+                       "      • 네임서버를 Cloudflare 제공 주소로 변경\n" +
+                       "   ⑥ DNS 전파 대기 (보통 1~24시간)\n\n" +
+                       "📝 **문제 해결 후**\n" +
+                       "위 단계를 완료하셨다면 다시 시도해주세요.\n" +
+                       "어떤 도메인을 등록하시겠습니까?";
+            } else if (errorMsg != null && (errorMsg.contains("DNS") || errorMsg.contains("dns"))) {
                 detailedCause = "DNS 설정에 문제가 있습니다.\nCloudflare DNS 연동이나 도메인 설정을 확인해주세요.";
                 solution = "1️⃣ 도메인이 Cloudflare에 등록되어 있는지 확인\n" +
                           "2️⃣ Cloudflare API 토큰이 올바른지 확인\n" +
@@ -381,72 +424,6 @@ public class CertificateTools {
         } catch (Exception e) {
             log.error("Error getting certificate by id", e);
             return String.format("❌ ID %d인 인증서를 찾을 수 없습니다: %s", certificateId, e.getMessage());
-        }
-    }
-
-    @Tool("Delete a certificate by ID. Use this ONLY after user explicitly confirms deletion. IMPORTANT: Before calling this, you MUST: 1) Search certificate by domain using searchCertificateByDomain, 2) Show certificate info to user, 3) Warn about consequences, 4) Ask for confirmation, 5) ONLY if user confirms, call this tool with the certificate ID. This action cannot be undone!")
-    public String deleteCertificate(Long certificateId) {
-        log.info("Tool called: deleteCertificate with id={}", certificateId);
-        
-        try {
-            Certificate cert = certificateService.findById(certificateId);
-            String domain = cert.getDomain();
-            
-            certificateService.delete(certificateId);
-            
-            return String.format(
-                "✅ 인증서가 성공적으로 삭제되었습니다.\n\n" +
-                "🗑️ 삭제된 인증서:\n" +
-                "- 도메인: %s\n\n" +
-                "⚠️ 이 작업은 되돌릴 수 없습니다.",
-                domain
-            );
-        } catch (Exception e) {
-            log.error("Error deleting certificate", e);
-            String errorMsg = e.getMessage();
-            String causeMsg = e.getCause() != null ? e.getCause().getMessage() : "";
-            
-            // 에러 원인 분석
-            String detailedCause = "";
-            String solution = "";
-            
-            if (errorMsg != null && (errorMsg.contains("not found") || errorMsg.contains("찾을 수 없") || errorMsg.contains("존재하지 않"))) {
-                detailedCause = "인증서를 찾을 수 없습니다.\n해당 ID의 인증서가 존재하지 않거나 이미 삭제되었습니다.";
-                solution = "1️⃣ 인증서 목록을 다시 확인해주세요\n" +
-                          "   → \"인증서 목록 보여줘\" 라고 말씀해주세요\n\n" +
-                          "2️⃣ 도메인으로 다시 검색해주세요\n" +
-                          "   → \"[도메인] 검색해줘\" 라고 말씀해주세요";
-            } else if (errorMsg != null && (errorMsg.contains("in use") || errorMsg.contains("사용 중") || errorMsg.contains("deployed"))) {
-                detailedCause = "인증서가 현재 서버에 배포되어 사용 중입니다.\n사용 중인 인증서는 삭제하기 전에 주의가 필요합니다.";
-                solution = "1️⃣ 배포된 서버에서 먼저 인증서를 제거해주세요\n" +
-                          "2️⃣ 또는 새 인증서로 교체 후 삭제해주세요\n" +
-                          "3️⃣ 강제 삭제가 필요하면 관리자에게 문의";
-            } else if (errorMsg != null && (errorMsg.contains("permission") || errorMsg.contains("권한") || errorMsg.contains("access denied"))) {
-                detailedCause = "권한 문제입니다.\n인증서를 삭제할 권한이 없습니다.";
-                solution = "1️⃣ 관리자 계정으로 로그인했는지 확인\n" +
-                          "2️⃣ 해당 인증서에 대한 삭제 권한이 있는지 확인\n" +
-                          "3️⃣ 권한이 필요하면 관리자에게 문의";
-            } else {
-                detailedCause = "예상치 못한 오류가 발생했습니다.\n" + (errorMsg != null ? errorMsg : "알 수 없는 오류");
-                solution = "1️⃣ 인증서가 존재하는지 확인:\n" +
-                          "   → \"인증서 목록 보여줘\"\n\n" +
-                          "2️⃣ 도메인으로 다시 검색:\n" +
-                          "   → \"[도메인] 검색해줘\"\n\n" +
-                          "3️⃣ 잠시 후 다시 시도\n\n" +
-                          "4️⃣ 문제가 계속되면 관리자에게 문의";
-            }
-            
-            return "❌ 인증서 삭제 실패\n\n" +
-                   "🔍 **실패 원인**\n" +
-                   detailedCause + "\n\n" +
-                   "📋 **에러 상세 정보**\n" +
-                   (errorMsg != null ? errorMsg : "에러 메시지 없음") + "\n" +
-                   (causeMsg != null && !causeMsg.isEmpty() ? "근본 원인: " + causeMsg + "\n" : "") + "\n" +
-                   "💡 **해결 방법**\n" +
-                   solution + "\n\n" +
-                   "📝 **다음 단계**\n" +
-                   "위 해결 방법을 확인하신 후 다시 시도해주세요.\n" +
-                   "다른 인증서를 삭제하시겠습니까?";
         }
     }
 
