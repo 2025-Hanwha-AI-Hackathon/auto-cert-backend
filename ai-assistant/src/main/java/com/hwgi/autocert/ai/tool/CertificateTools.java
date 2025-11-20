@@ -111,13 +111,65 @@ public class CertificateTools {
         } catch (Exception e) {
             log.error("Error renewing certificate", e);
             String errorMsg = e.getMessage();
+            String causeMsg = e.getCause() != null ? e.getCause().getMessage() : "";
+            
+            // 에러 원인 분석
+            String detailedCause = "";
+            String solution = "";
+            
+            if (errorMsg != null && (errorMsg.contains("not found") || errorMsg.contains("찾을 수 없") || errorMsg.contains("존재하지 않"))) {
+                detailedCause = "인증서를 찾을 수 없습니다.\n해당 ID의 인증서가 존재하지 않거나 이미 삭제되었습니다.";
+                solution = "1️⃣ 인증서 목록을 다시 확인해주세요\n" +
+                          "   → \"인증서 목록 보여줘\" 라고 말씀해주세요\n\n" +
+                          "2️⃣ 도메인으로 다시 검색해주세요\n" +
+                          "   → \"[도메인] 검색해줘\" 라고 말씀해주세요";
+            } else if (errorMsg != null && (errorMsg.contains("ACME") || errorMsg.contains("acme"))) {
+                detailedCause = "ACME 프로토콜 오류입니다.\nLet's Encrypt 서버와의 통신에 문제가 있습니다.";
+                solution = "1️⃣ 도메인이 인터넷에서 접근 가능한지 확인\n" +
+                          "2️⃣ DNS 설정이 올바른지 확인\n" +
+                          "3️⃣ Let's Encrypt Rate Limit 초과 여부 확인\n" +
+                          "   → 같은 도메인을 짧은 시간에 여러 번 갱신하면 제한됩니다\n" +
+                          "4️⃣ 30분~1시간 후 다시 시도";
+            } else if (errorMsg != null && (errorMsg.contains("DNS") || errorMsg.contains("dns") || errorMsg.contains("validation"))) {
+                detailedCause = "DNS 인증(Challenge) 실패입니다.\nCloudflare DNS 설정 또는 도메인 소유권 인증에 실패했습니다.";
+                solution = "1️⃣ Cloudflare에 해당 도메인이 등록되어 있는지 확인\n" +
+                          "2️⃣ Cloudflare API 토큰 권한 확인:\n" +
+                          "   - Zone.DNS 권한이 있어야 합니다\n" +
+                          "   - API 토큰이 만료되지 않았는지 확인\n" +
+                          "3️⃣ 도메인의 네임서버가 Cloudflare로 설정되어 있는지 확인\n" +
+                          "4️⃣ Cloudflare 대시보드에서 DNS 레코드 확인";
+            } else if (errorMsg != null && (errorMsg.contains("expired") || errorMsg.contains("만료"))) {
+                detailedCause = "인증서가 이미 만료되었습니다.";
+                solution = "1️⃣ 만료된 인증서는 정상적으로 갱신 가능합니다\n" +
+                          "2️⃣ DNS 설정과 Cloudflare 연동을 확인해주세요\n" +
+                          "3️⃣ 다시 시도해주세요";
+            } else if (errorMsg != null && (errorMsg.contains("permission") || errorMsg.contains("권한") || errorMsg.contains("access denied"))) {
+                detailedCause = "권한 문제입니다.\nAPI 토큰 또는 서버 접근 권한이 부족합니다.";
+                solution = "1️⃣ Cloudflare API 토큰 권한 확인\n" +
+                          "2️⃣ 서버 SSH 접근 권한 확인\n" +
+                          "3️⃣ 관리자 계정으로 다시 시도";
+            } else {
+                detailedCause = "예상치 못한 오류가 발생했습니다.\n" + (errorMsg != null ? errorMsg : "알 수 없는 오류");
+                solution = "1️⃣ 인증서 상태 확인:\n" +
+                          "   → \"[도메인] 인증서 정보 보여줘\"\n\n" +
+                          "2️⃣ 현재 상태가 갱신 가능한지 확인\n" +
+                          "   - ACTIVE, EXPIRING_SOON, EXPIRED 상태는 갱신 가능\n" +
+                          "   - PENDING, RENEWING 상태는 잠시 기다렸다가 시도\n\n" +
+                          "3️⃣ 잠시 후 (5~10분) 다시 시도\n\n" +
+                          "4️⃣ 문제가 계속되면 관리자에게 문의";
+            }
+            
             return "❌ 인증서 갱신 실패\n\n" +
-                   "🔍 원인: " + errorMsg + "\n\n" +
-                   "💡 해결 방법:\n" +
-                   "1. 인증서 상태가 갱신 가능한지 확인해주세요\n" +
-                   "2. 도메인이 올바른지 확인해주세요\n" +
-                   "3. 잠시 후 다시 시도해주세요\n\n" +
-                   "📝 다시 시도하시겠습니까? 다른 도메인을 갱신하시겠습니까?";
+                   "🔍 **실패 원인**\n" +
+                   detailedCause + "\n\n" +
+                   "📋 **에러 상세 정보**\n" +
+                   (errorMsg != null ? errorMsg : "에러 메시지 없음") + "\n" +
+                   (causeMsg != null && !causeMsg.isEmpty() ? "근본 원인: " + causeMsg + "\n" : "") + "\n" +
+                   "💡 **해결 방법**\n" +
+                   solution + "\n\n" +
+                   "📝 **다음 단계**\n" +
+                   "위 해결 방법을 시도하신 후 다시 갱신을 요청해주세요.\n" +
+                   "다른 도메인을 갱신하시겠습니까?";
         }
     }
 
@@ -205,11 +257,23 @@ public class CertificateTools {
             // 서버가 등록되지 않은 경우
             log.error("Error creating certificate - no server registered", e);
             return "❌ 인증서 생성 실패\n\n" +
-                   "🔍 원인: " + e.getMessage() + "\n\n" +
-                   "💡 해결 방법:\n" +
-                   "1. 웹 UI의 '서버 관리' 메뉴에서 서버를 먼저 등록해주세요\n" +
-                   "2. 서버 등록 후 다시 시도해주세요\n\n" +
-                   "📝 다시 시도하시겠습니까? 도메인 이름을 알려주세요.";
+                   "🔍 **실패 원인**\n" +
+                   "등록된 서버가 없습니다.\n" +
+                   "인증서를 생성하려면 먼저 배포할 서버 정보가 필요합니다.\n\n" +
+                   "💡 **해결 방법 (필수)**\n" +
+                   "**다음 단계를 따라주세요:**\n\n" +
+                   "1️⃣ 웹 페이지 왼쪽 메뉴에서 '서버 관리' 클릭\n" +
+                   "2️⃣ '서버 추가' 버튼 클릭\n" +
+                   "3️⃣ 서버 정보 입력:\n" +
+                   "   - 서버 이름: 예) Production Server\n" +
+                   "   - 호스트: 서버 IP 또는 도메인\n" +
+                   "   - 포트: SSH 포트 (기본 22)\n" +
+                   "   - 사용자명: SSH 접속 계정\n" +
+                   "   - 비밀번호: SSH 비밀번호\n" +
+                   "4️⃣ 저장 후 이 대화창으로 돌아오세요\n\n" +
+                   "📝 **서버 등록 후 알려주세요**\n" +
+                   "서버 등록을 완료하셨다면 '서버 등록 완료했어' 라고 말씀해주시고,\n" +
+                   "다시 등록하실 도메인 이름을 알려주세요.";
         } catch (IllegalArgumentException e) {
             // 도메인 형식이나 기타 인자 오류
             log.error("Error creating certificate - invalid argument", e);
@@ -217,35 +281,93 @@ public class CertificateTools {
             
             if (errorMsg.contains("domain") || errorMsg.contains("도메인")) {
                 return "❌ 인증서 생성 실패\n\n" +
-                       "🔍 원인: 도메인 형식이 올바르지 않습니다\n\n" +
-                       "💡 올바른 도메인 형식:\n" +
-                       "- example.com\n" +
-                       "- subdomain.example.com\n" +
-                       "- example.co.kr\n\n" +
-                       "📝 올바른 도메인으로 다시 시도해주세요. 어떤 도메인을 등록하시겠습니까?";
-            } else if (errorMsg.contains("이미 존재") || errorMsg.contains("duplicate")) {
+                       "🔍 **실패 원인**\n" +
+                       "입력하신 도메인 형식이 올바르지 않습니다.\n" +
+                       "에러 상세: " + e.getMessage() + "\n\n" +
+                       "💡 **올바른 도메인 형식**\n" +
+                       "✅ 올바른 예시:\n" +
+                       "  • example.com\n" +
+                       "  • www.example.com\n" +
+                       "  • subdomain.example.com\n" +
+                       "  • example.co.kr\n" +
+                       "  • api.myservice.io\n\n" +
+                       "❌ 잘못된 예시:\n" +
+                       "  • example (TLD 없음)\n" +
+                       "  • http://example.com (프로토콜 포함)\n" +
+                       "  • example.com/ (슬래시 포함)\n" +
+                       "  • example .com (공백 포함)\n\n" +
+                       "📝 **다시 입력해주세요**\n" +
+                       "올바른 형식의 도메인 이름을 알려주세요.\n" +
+                       "(예: example.com)";
+            } else if (errorMsg.contains("이미 존재") || errorMsg.contains("duplicate") || errorMsg.contains("already exists")) {
                 return "⚠️ 인증서 등록 불가\n\n" +
-                       "🔍 원인: 이미 등록된 도메인입니다\n\n" +
-                       "💡 다음 중 선택해주세요:\n" +
-                       "1. 기존 인증서를 갱신하시겠습니까?\n" +
-                       "2. 다른 도메인을 등록하시겠습니까?\n\n" +
+                       "🔍 **실패 원인**\n" +
+                       "이 도메인은 이미 인증서가 등록되어 있습니다.\n" +
+                       "중복 등록은 불가능합니다.\n\n" +
+                       "💡 **해결 방법**\n" +
+                       "다음 중 하나를 선택해주세요:\n\n" +
+                       "1️⃣ **기존 인증서 갱신**\n" +
+                       "   → \"[도메인] 인증서를 갱신해줘\" 라고 말씀해주세요\n\n" +
+                       "2️⃣ **다른 도메인 등록**\n" +
+                       "   → 등록하실 새로운 도메인 이름을 알려주세요\n\n" +
+                       "3️⃣ **기존 인증서 삭제 후 재등록**\n" +
+                       "   → \"[도메인] 인증서를 삭제해줘\" 라고 먼저 말씀해주세요\n\n" +
                        "어떻게 하시겠습니까?";
             } else {
                 return "❌ 인증서 생성 실패\n\n" +
-                       "🔍 원인: " + e.getMessage() + "\n\n" +
-                       "💡 입력 정보를 확인해주세요\n\n" +
-                       "📝 다시 시도하시겠습니까? 도메인 이름을 알려주세요.";
+                       "🔍 **실패 원인**\n" +
+                       e.getMessage() + "\n\n" +
+                       "💡 **해결 방법**\n" +
+                       "입력하신 정보를 다시 확인해주세요.\n" +
+                       "- 도메인 형식이 올바른가요? (예: example.com)\n" +
+                       "- 특수문자가 포함되어 있지 않나요?\n\n" +
+                       "📝 **다시 시도**\n" +
+                       "올바른 도메인 이름을 다시 알려주세요.";
             }
         } catch (Exception e) {
-            // 기타 예외
+            // 기타 예외 - 더 구체적으로 분석
             log.error("Error creating certificate", e);
-            return "❌ 인증서 생성 중 예상치 못한 오류가 발생했습니다\n\n" +
-                   "🔍 오류 내용: " + e.getMessage() + "\n\n" +
-                   "💡 해결 방법:\n" +
-                   "1. 도메인 형식 확인 (예: example.com)\n" +
-                   "2. 서버가 등록되어 있는지 확인\n" +
-                   "3. 문제가 계속되면 관리자에게 문의\n\n" +
-                   "📝 다른 도메인으로 다시 시도하시겠습니까?";
+            String errorMsg = e.getMessage();
+            String causeMsg = e.getCause() != null ? e.getCause().getMessage() : "";
+            
+            // 에러 메시지 분석하여 구체적인 원인 파악
+            String detailedCause = "";
+            String solution = "";
+            
+            if (errorMsg != null && (errorMsg.contains("DNS") || errorMsg.contains("dns"))) {
+                detailedCause = "DNS 설정에 문제가 있습니다.\nCloudflare DNS 연동이나 도메인 설정을 확인해주세요.";
+                solution = "1️⃣ 도메인이 Cloudflare에 등록되어 있는지 확인\n" +
+                          "2️⃣ Cloudflare API 토큰이 올바른지 확인\n" +
+                          "3️⃣ 도메인의 네임서버가 Cloudflare를 가리키는지 확인";
+            } else if (errorMsg != null && (errorMsg.contains("connection") || errorMsg.contains("연결"))) {
+                detailedCause = "네트워크 연결에 문제가 있습니다.";
+                solution = "1️⃣ 인터넷 연결 상태 확인\n" +
+                          "2️⃣ 방화벽 설정 확인\n" +
+                          "3️⃣ 잠시 후 다시 시도";
+            } else if (errorMsg != null && (errorMsg.contains("permission") || errorMsg.contains("권한"))) {
+                detailedCause = "권한 문제가 발생했습니다.";
+                solution = "1️⃣ API 토큰의 권한 확인\n" +
+                          "2️⃣ 서버 접근 권한 확인\n" +
+                          "3️⃣ 관리자 권한으로 다시 시도";
+            } else {
+                detailedCause = "예상치 못한 오류가 발생했습니다.\n" + (errorMsg != null ? errorMsg : "알 수 없는 오류");
+                solution = "1️⃣ 입력한 정보가 모두 올바른지 확인\n" +
+                          "2️⃣ 서버가 정상 작동 중인지 확인\n" +
+                          "3️⃣ 잠시 후 다시 시도\n" +
+                          "4️⃣ 문제가 계속되면 관리자에게 문의";
+            }
+            
+            return "❌ 인증서 생성 실패\n\n" +
+                   "🔍 **실패 원인**\n" +
+                   detailedCause + "\n\n" +
+                   "📋 **에러 상세 정보**\n" +
+                   (errorMsg != null ? errorMsg : "에러 메시지 없음") + "\n" +
+                   (causeMsg != null && !causeMsg.isEmpty() ? "근본 원인: " + causeMsg + "\n" : "") + "\n" +
+                   "💡 **해결 방법**\n" +
+                   solution + "\n\n" +
+                   "📝 **다음 단계**\n" +
+                   "문제를 해결하셨다면 다시 시도해주세요.\n" +
+                   "어떤 도메인을 등록하시겠습니까?";
         }
     }
 
@@ -281,7 +403,50 @@ public class CertificateTools {
             );
         } catch (Exception e) {
             log.error("Error deleting certificate", e);
-            return String.format("❌ 인증서 삭제 중 오류가 발생했습니다: %s", e.getMessage());
+            String errorMsg = e.getMessage();
+            String causeMsg = e.getCause() != null ? e.getCause().getMessage() : "";
+            
+            // 에러 원인 분석
+            String detailedCause = "";
+            String solution = "";
+            
+            if (errorMsg != null && (errorMsg.contains("not found") || errorMsg.contains("찾을 수 없") || errorMsg.contains("존재하지 않"))) {
+                detailedCause = "인증서를 찾을 수 없습니다.\n해당 ID의 인증서가 존재하지 않거나 이미 삭제되었습니다.";
+                solution = "1️⃣ 인증서 목록을 다시 확인해주세요\n" +
+                          "   → \"인증서 목록 보여줘\" 라고 말씀해주세요\n\n" +
+                          "2️⃣ 도메인으로 다시 검색해주세요\n" +
+                          "   → \"[도메인] 검색해줘\" 라고 말씀해주세요";
+            } else if (errorMsg != null && (errorMsg.contains("in use") || errorMsg.contains("사용 중") || errorMsg.contains("deployed"))) {
+                detailedCause = "인증서가 현재 서버에 배포되어 사용 중입니다.\n사용 중인 인증서는 삭제하기 전에 주의가 필요합니다.";
+                solution = "1️⃣ 배포된 서버에서 먼저 인증서를 제거해주세요\n" +
+                          "2️⃣ 또는 새 인증서로 교체 후 삭제해주세요\n" +
+                          "3️⃣ 강제 삭제가 필요하면 관리자에게 문의";
+            } else if (errorMsg != null && (errorMsg.contains("permission") || errorMsg.contains("권한") || errorMsg.contains("access denied"))) {
+                detailedCause = "권한 문제입니다.\n인증서를 삭제할 권한이 없습니다.";
+                solution = "1️⃣ 관리자 계정으로 로그인했는지 확인\n" +
+                          "2️⃣ 해당 인증서에 대한 삭제 권한이 있는지 확인\n" +
+                          "3️⃣ 권한이 필요하면 관리자에게 문의";
+            } else {
+                detailedCause = "예상치 못한 오류가 발생했습니다.\n" + (errorMsg != null ? errorMsg : "알 수 없는 오류");
+                solution = "1️⃣ 인증서가 존재하는지 확인:\n" +
+                          "   → \"인증서 목록 보여줘\"\n\n" +
+                          "2️⃣ 도메인으로 다시 검색:\n" +
+                          "   → \"[도메인] 검색해줘\"\n\n" +
+                          "3️⃣ 잠시 후 다시 시도\n\n" +
+                          "4️⃣ 문제가 계속되면 관리자에게 문의";
+            }
+            
+            return "❌ 인증서 삭제 실패\n\n" +
+                   "🔍 **실패 원인**\n" +
+                   detailedCause + "\n\n" +
+                   "📋 **에러 상세 정보**\n" +
+                   (errorMsg != null ? errorMsg : "에러 메시지 없음") + "\n" +
+                   (causeMsg != null && !causeMsg.isEmpty() ? "근본 원인: " + causeMsg + "\n" : "") + "\n" +
+                   "💡 **해결 방법**\n" +
+                   solution + "\n\n" +
+                   "📝 **다음 단계**\n" +
+                   "위 해결 방법을 확인하신 후 다시 시도해주세요.\n" +
+                   "다른 인증서를 삭제하시겠습니까?";
         }
     }
 
