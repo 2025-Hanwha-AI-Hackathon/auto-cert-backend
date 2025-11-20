@@ -3,28 +3,26 @@ dependencies {
     implementation project(':common')
     implementation project(':domain')
     implementation project(':certificate-manager')
-    implementation project(':ai-assistant')
 
     // Spring Boot Starters
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    // Swagger/OpenAPI
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
-
-    // PostgreSQL Driver
-    runtimeOnly 'org.postgresql:postgresql'
-
-    // Testing
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    // LangChain4j - OpenAI
+    implementation 'dev.langchain4j:langchain4j:0.35.0'
+    implementation 'dev.langchain4j:langchain4j-open-ai:0.35.0'
+    
+    // LangChain4j Spring Boot Starter
+    implementation 'dev.langchain4j:langchain4j-spring-boot-starter:0.35.0'
 }
 
-// This is the main application module - enable bootJar
+// Library module - disable bootJar
 tasks.named('bootJar') {
-    enabled = true
+    enabled = false
 }
 
 tasks.named('jar') {
-    enabled = false
+    enabled = true
 }
+

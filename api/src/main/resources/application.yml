@@ -109,6 +109,15 @@ cloudflare:
   # API Token 방식 (권장)
   api-token: ${CLOUDFLARE_API_TOKEN}
 
+# AI Assistant Configuration
+ai:
+  assistant:
+    api-key: ${AI_ASSISTANT_API_KEY:}
+    model-name: ${AI_ASSISTANT_MODEL_NAME:gpt-3.5-turbo}
+    temperature: ${AI_ASSISTANT_TEMPERATURE:0.7}
+    max-tokens: ${AI_ASSISTANT_MAX_TOKENS:1000}
+    max-history-size: 10
+
 # Swagger/OpenAPI
 springdoc:
   api-docs:

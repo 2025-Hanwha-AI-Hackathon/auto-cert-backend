@@ -1,5 +1,6 @@
 package com.hwgi.autocert.api;
 
+import com.hwgi.autocert.ai.config.AiProperties;
 import com.hwgi.autocert.certificate.config.AcmeProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,9 +18,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     "com.hwgi.autocert.api",
     "com.hwgi.autocert.domain",
     "com.hwgi.autocert.certificate",
-    "com.hwgi.autocert.common"
+    "com.hwgi.autocert.common",
+    "com.hwgi.autocert.ai"
 })
-@EnableConfigurationProperties(AcmeProperties.class)
+@EnableConfigurationProperties({AcmeProperties.class, AiProperties.class})
 @EnableJpaRepositories(basePackages = "com.hwgi.autocert.domain.repository")
 @EntityScan(basePackages = "com.hwgi.autocert.domain.model")
 @EnableScheduling
