@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인증서 생성 완료</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .certificate-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-row {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+            min-width: 120px;
+        }
+        .info-value {
+            color: #212529;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">🎉</div>
+            <h1>새 인증서 생성 완료</h1>
+        </div>
+        
+        <div class="content">
+            <p>안녕하세요,</p>
+            <p>새로운 SSL/TLS 인증서가 성공적으로 생성되었습니다.</p>
+            
+            <div class="certificate-info">
+                <div class="info-row">
+                    <span class="info-label">🌐 도메인:</span>
+                    <span class="info-value" th:text="${domain}">example.com</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">📅 발급일:</span>
+                    <span class="info-value" th:text="${#temporals.format(issuedAt, 'yyyy-MM-dd HH:mm:ss')}">2024-01-01 12:00:00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">⏰ 만료일:</span>
+                    <span class="info-value" th:text="${#temporals.format(expiresAt, 'yyyy-MM-dd HH:mm:ss')}">2024-03-01 12:00:00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">📊 상태:</span>
+                    <span class="status-badge status-active" th:text="${status}">ACTIVE</span>
+                </div>
+                <div class="info-row" th:if="${admin}">
+                    <span class="info-label">👤 관리자:</span>
+                    <span class="info-value" th:text="${admin}">Admin</span>
+                </div>
+            </div>
+            
+            <p>
+                인증서가 활성화되었으며, 등록된 서버에 자동으로 배포될 수 있습니다.<br>
+                인증서 관리 페이지에서 상세 정보를 확인하실 수 있습니다.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>이 메일은 AutoCert 시스템에서 자동으로 발송되었습니다.</p>
+            <p>본 메일에 회신하지 마십시오.</p>
+        </div>
+    </div>
+</body>
+</html>
