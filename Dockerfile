@@ -11,6 +11,7 @@ COPY common/build.gradle ./common/
 COPY domain/build.gradle ./domain/
 COPY server-manager/build.gradle ./server-manager/
 COPY certificate-manager/build.gradle ./certificate-manager/
+COPY notification-manager/build.gradle ./notification-manager/
 COPY ai-assistant/build.gradle ./ai-assistant/
 COPY api/build.gradle ./api/
 
@@ -21,6 +22,7 @@ RUN gradle build --no-daemon -x test -x compileJava -x compileTestJava || return
 COPY common/src ./common/src
 COPY domain/src ./domain/src
 COPY server-manager/src ./server-manager/src
+COPY notification-manager/src ./notification-manager/src
 COPY certificate-manager/src ./certificate-manager/src
 COPY ai-assistant/src ./ai-assistant/src
 COPY api/src ./api/src
