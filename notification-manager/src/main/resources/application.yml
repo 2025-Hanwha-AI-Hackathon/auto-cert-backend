@@ -1,4 +1,0 @@
-# Notification Manager Module Configuration
-spring:
-  application:
-    name: notification-manager

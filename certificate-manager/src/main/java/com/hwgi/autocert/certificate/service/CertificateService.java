@@ -3,16 +3,16 @@ package com.hwgi.autocert.certificate.service;
 import com.hwgi.autocert.certificate.acme.challenge.ChallengeType;
 import com.hwgi.autocert.certificate.acme.service.AcmeOrderService;
 import com.hwgi.autocert.certificate.config.AcmeProperties;
-import com.hwgi.autocert.certificate.util.CertificateEncryptionUtil;
 import com.hwgi.autocert.certificate.distribution.service.CertificateDistributionService;
+import com.hwgi.autocert.certificate.util.CertificateEncryptionUtil;
 import com.hwgi.autocert.common.exception.ResourceNotFoundException;
 import com.hwgi.autocert.domain.model.Certificate;
 import com.hwgi.autocert.domain.model.CertificateStatus;
-import com.hwgi.autocert.domain.repository.CertificateRepository;
-import com.hwgi.autocert.domain.repository.ServerRepository;
-import com.hwgi.autocert.domain.repository.DeploymentRepository;
-import com.hwgi.autocert.domain.model.Server;
 import com.hwgi.autocert.domain.model.Deployment;
+import com.hwgi.autocert.domain.model.Server;
+import com.hwgi.autocert.domain.repository.CertificateRepository;
+import com.hwgi.autocert.domain.repository.DeploymentRepository;
+import com.hwgi.autocert.domain.repository.ServerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -494,6 +494,68 @@ public class CertificateService {
             // 배포 실패는 인증서 생성/갱신을 실패시키지 않음
             // 나중에 수동으로 재배포 가능
         }
+    }
+
+    /**
+     * 저장된 인증서를 서버에 수동 배포
+     * 
+     * @param certificateId 배포할 인증서 ID
+     * @return 배포 결과
+     */
+    @Transactional
+    public Deployment deployManually(Long certificateId) {
+        log.info("Manual deployment requested for certificate ID: {}", certificateId);
+        
+        // 인증서 조회
+        Certificate certificate = findById(certificateId);
+        
+        // 배포 준비 상태 확인
+        if (!distributionService.isReadyForDeployment(certificate)) {
+            throw new IllegalStateException("인증서가 배포 준비 상태가 아닙니다. 서버 정보 및 인증서 파일을 확인하세요.");
+        }
+
+        // 개인키 복호화
+        String decryptedPrivateKey = decryptPrivateKey(certificate);
+
+        // 배포 실행 전 배포 이력 조회를 위한 서버 정보
+        Server server = certificate.getServer();
+        
+        // 배포 실행
+        boolean deploymentSuccess = distributionService.deploy(certificate, decryptedPrivateKey);
+        
+        if (!deploymentSuccess) {
+            throw new RuntimeException("인증서 배포에 실패했습니다. 서버 연결 및 로그를 확인하세요.");
+        }
+        
+        // 최신 배포 이력 조회 (가장 최근에 생성된 배포 이력)
+        Deployment latestDeployment = deploymentRepository
+            .findFirstByCertificateAndServerOrderByDeployedAtDesc(certificate, server)
+            .orElseThrow(() -> new RuntimeException("배포 이력을 찾을 수 없습니다."));
+        
+        log.info("Certificate {} manually deployed successfully to server {}", 
+            certificateId, server.getName());
+        
+        return latestDeployment;
+    }
+
+    /**
+     * 인증서의 최신 배포 상태 조회
+     * 
+     * @param certificateId 인증서 ID
+     * @return 최신 배포 상태 (배포 이력이 없으면 null)
+     */
+    public String getLatestDeploymentStatus(Long certificateId) {
+        Certificate certificate = findById(certificateId);
+        Server server = certificate.getServer();
+        
+        if (server == null) {
+            return null;
+        }
+        
+        return deploymentRepository
+            .findFirstByCertificateAndServerOrderByDeployedAtDesc(certificate, server)
+            .map(deployment -> deployment.getStatus().name())
+            .orElse(null);
     }
 
 }
