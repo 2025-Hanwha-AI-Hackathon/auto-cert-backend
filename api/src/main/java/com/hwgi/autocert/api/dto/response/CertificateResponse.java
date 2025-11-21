@@ -29,6 +29,7 @@ public class CertificateResponse {
     private String admin;
     private Integer alertDaysBeforeExpiry;
     private Boolean autoDeploy;
+    private String latestDeploymentStatus;  // 최신 배포 상태
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -46,6 +47,26 @@ public class CertificateResponse {
                 .admin(certificate.getAdmin())
                 .alertDaysBeforeExpiry(certificate.getAlertDaysBeforeExpiry())
                 .autoDeploy(certificate.getAutoDeploy())
+                .createdAt(certificate.getCreatedAt())
+                .updatedAt(certificate.getUpdatedAt())
+                .build();
+    }
+
+    /**
+     * Entity to Response DTO with deployment status
+     */
+    public static CertificateResponse from(Certificate certificate, String latestDeploymentStatus) {
+        return CertificateResponse.builder()
+                .id(certificate.getId())
+                .serverId(certificate.getServer() != null ? certificate.getServer().getId() : null)
+                .domain(certificate.getDomain())
+                .issuedAt(certificate.getIssuedAt())
+                .expiresAt(certificate.getExpiresAt())
+                .status(certificate.getStatus().name())
+                .admin(certificate.getAdmin())
+                .alertDaysBeforeExpiry(certificate.getAlertDaysBeforeExpiry())
+                .autoDeploy(certificate.getAutoDeploy())
+                .latestDeploymentStatus(latestDeploymentStatus)
                 .createdAt(certificate.getCreatedAt())
                 .updatedAt(certificate.getUpdatedAt())
                 .build();
