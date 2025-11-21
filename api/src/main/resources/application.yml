@@ -88,6 +88,9 @@ management:
 
 # Auto-Cert Configuration
 autocert:
+  encryption:
+    key: ${CERTIFICATE_ENCRYPTION_KEY}
+
   certificate:
     acme:
       # ACME 서버 URL. 환경 변수 ACME_DIRECTORY_URL로 대체 가능.
