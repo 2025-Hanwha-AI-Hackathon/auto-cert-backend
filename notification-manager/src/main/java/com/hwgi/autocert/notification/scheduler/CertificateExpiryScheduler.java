@@ -21,6 +21,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    prefix = "app.email",
+    name = "enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 public class CertificateExpiryScheduler {
     
     private final CertificateRepository certificateRepository;

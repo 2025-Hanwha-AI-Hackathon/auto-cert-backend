@@ -1,6 +1,7 @@
 package com.hwgi.autocert.notification.config;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -10,9 +11,16 @@ import java.util.List;
 /**
  * 이메일 알림 설정
  */
-@Data
+@Getter
+@Setter
 @Component
 @ConfigurationProperties(prefix = "app.email")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    prefix = "app.email",
+    name = "enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 public class EmailProperties {
     
     /**
@@ -37,5 +45,5 @@ public class EmailProperties {
     /**
      * 이메일 발송 활성화 여부
      */
-    private Boolean enabled = true;
+    private boolean enabled = false;
 }

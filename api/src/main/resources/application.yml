@@ -68,9 +68,9 @@ app:
   
   # Email Notification Configuration
   email:
-    enabled: ${EMAIL_ENABLED:true}
-    from: ${EMAIL_FROM:noreply@autocert.com}
-    from-name: ${EMAIL_FROM_NAME:AutoCert System}
+    enabled: true
+    from: noreply@autocert.com
+    from-name: AutoCert System
     recipients:
       - x2xgudwls@hanwha.com
       - cheal3@hanwha.com

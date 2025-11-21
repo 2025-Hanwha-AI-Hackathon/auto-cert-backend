@@ -51,7 +51,9 @@ public class CertificateService {
     private final CertificateEncryptionUtil encryptionUtil;
     private final AcmeProperties acmeProperties;
     private final CertificateDistributionService distributionService;
-    private final EmailService emailService;
+    
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private EmailService emailService;
 
     /**
      * 모든 인증서 조회 (페이지네이션)
@@ -184,11 +186,13 @@ public class CertificateService {
             }
 
             // 7. 이메일 알림 발송
-            try {
-                emailService.sendCertificateCreated(saved);
-            } catch (Exception e) {
-                log.error("Failed to send certificate creation email for domain: {}", domain, e);
-                // 이메일 발송 실패는 인증서 생성을 실패시키지 않음
+            if (emailService != null) {
+                try {
+                    emailService.sendCertificateCreated(saved);
+                } catch (Exception e) {
+                    log.error("Failed to send certificate creation email for domain: {}", domain, e);
+                    // 이메일 발송 실패는 인증서 생성을 실패시키지 않음
+                }
             }
 
             return saved;
@@ -277,11 +281,13 @@ public class CertificateService {
             }
 
             // 7. 이메일 알림 발송
-            try {
-                emailService.sendCertificateRenewed(renewed);
-            } catch (Exception e) {
-                log.error("Failed to send certificate renewal email for domain: {}", domain, e);
-                // 이메일 발송 실패는 인증서 갱신을 실패시키지 않음
+            if (emailService != null) {
+                try {
+                    emailService.sendCertificateRenewed(renewed);
+                } catch (Exception e) {
+                    log.error("Failed to send certificate renewal email for domain: {}", domain, e);
+                    // 이메일 발송 실패는 인증서 갱신을 실패시키지 않음
+                }
             }
 
             return renewed;
@@ -434,11 +440,13 @@ public class CertificateService {
         log.info("Certificate deleted: {}", id);
         
         // 3. 이메일 알림 발송
-        try {
-            emailService.sendCertificateDeleted(domain);
-        } catch (Exception e) {
-            log.error("Failed to send certificate deletion email for domain: {}", domain, e);
-            // 이메일 발송 실패는 삭제 작업에 영향을 주지 않음
+        if (emailService != null) {
+            try {
+                emailService.sendCertificateDeleted(domain);
+            } catch (Exception e) {
+                log.error("Failed to send certificate deletion email for domain: {}", domain, e);
+                // 이메일 발송 실패는 삭제 작업에 영향을 주지 않음
+            }
         }
     }
 
