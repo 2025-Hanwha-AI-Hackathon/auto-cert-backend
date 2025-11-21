@@ -44,22 +44,63 @@ public class ChainValidator implements CertificateValidator {
             // 체인 검증
             X509Certificate[] chain = certificateChain.toArray(new X509Certificate[0]);
             
-            // TrustManager를 사용한 체인 검증
-            trustManager.checkServerTrusted(chain, "RSA");
+            // Let's Encrypt Staging 인증서 여부 확인
+            boolean isStagingCert = isLetsEncryptStagingCertificate(certificate);
             
-            // 추가 체인 검증 (PKIX)
-            CertPath certPath = validateCertPath(chain);
-            
-            String details = String.format(
-                    "ChainLength: %d, RootCA: %s",
-                    chain.length,
-                    chain[chain.length - 1].getSubjectX500Principal()
-            );
-            
-            return ValidationCheckResult.success(
-                    String.format("Certificate chain is valid (%d certificates)", chain.length),
-                    details
-            );
+            // TrustManager를 사용한 체인 검증 시도
+            try {
+                trustManager.checkServerTrusted(chain, "RSA");
+                
+                // 추가 체인 검증 (PKIX)
+                CertPath certPath = validateCertPath(chain);
+                
+                String environment = isStagingCert ? " (Staging)" : " (Production)";
+                String details = String.format(
+                        "ChainLength: %d, Environment: %s, RootCA: %s",
+                        chain.length,
+                        isStagingCert ? "Staging" : "Production",
+                        chain[chain.length - 1].getSubjectX500Principal()
+                );
+                
+                return ValidationCheckResult.success(
+                        String.format("Certificate chain is valid (%d certificates)%s", chain.length, environment),
+                        details
+                );
+            } catch (CertificateException e) {
+                // Staging 인증서인 경우 시스템 Trust Store에 없음
+                if (isStagingCert) {
+                    log.warn("Let's Encrypt Staging certificate detected - not trusted by browsers");
+                    
+                    // 체인 구조만 검증하여 구조적으로는 올바른지 확인
+                    try {
+                        for (int i = 0; i < chain.length - 1; i++) {
+                            X509Certificate current = chain[i];
+                            X509Certificate issuer = chain[i + 1];
+                            current.verify(issuer.getPublicKey());
+                        }
+                    } catch (Exception structureException) {
+                        // 체인 구조도 잘못된 경우
+                        return ValidationCheckResult.failure(
+                                "Staging certificate chain structure is invalid: " + structureException.getMessage(),
+                                "INVALID_STAGING_CHAIN"
+                        );
+                    }
+                    
+                    String details = String.format(
+                            "ChainLength: %d, Environment: Staging, RootCA: %s",
+                            chain.length,
+                            chain[chain.length - 1].getSubjectX500Principal()
+                    );
+                    
+                    // Staging 인증서는 실패로 표시 (브라우저에서 신뢰하지 않음)
+                    return ValidationCheckResult.failure(
+                            "Certificate is from Let's Encrypt STAGING environment and is NOT trusted by browsers (test certificate only)",
+                            "UNTRUSTED_STAGING_CERTIFICATE",
+                            details
+                    );
+                }
+                throw e;
+            }
             
         } catch (CertificateException e) {
             log.error("Certificate chain validation failed: {}", e.getMessage());
@@ -147,5 +188,18 @@ public class ChainValidator implements CertificateValidator {
         }
         
         return trustStore;
+    }
+    
+    /**
+     * Let's Encrypt Staging 인증서 여부 확인
+     */
+    private boolean isLetsEncryptStagingCertificate(X509Certificate certificate) {
+        String issuer = certificate.getIssuerX500Principal().getName();
+        
+        // Staging 인증서는 "(STAGING)" 키워드 포함
+        // 예: CN=(STAGING) Pretend Pear X1, O=(STAGING) Let's Encrypt, C=US
+        return issuer.contains("(STAGING)") || 
+               issuer.contains("Fake LE") || 
+               issuer.contains("Pretend Pear");
     }
 }

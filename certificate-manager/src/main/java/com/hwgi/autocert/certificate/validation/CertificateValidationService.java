@@ -145,6 +145,15 @@ public class CertificateValidationService {
         collectWarningsAndErrors(result, domainCheck, "Domain");
         collectWarningsAndErrors(result, keyUsageCheck, "KeyUsage");
         
+        // Staging 인증서 특별 경고 추가
+        if (chainCheck != null && !chainCheck.isValid() && 
+            chainCheck.getErrorCode() != null && 
+            chainCheck.getErrorCode().equals("UNTRUSTED_STAGING_CERTIFICATE")) {
+            result.addWarning("⚠️ This is a Let's Encrypt STAGING certificate - NOT trusted by browsers!");
+            result.addWarning("Staging certificates should ONLY be used for testing purposes");
+            result.addWarning("Deploy a PRODUCTION certificate for real-world use");
+        }
+        
         log.info("Validation completed. Overall result: {}", isValid ? "VALID" : "INVALID");
         
         return result;
@@ -165,7 +174,9 @@ public class CertificateValidationService {
             result.addError(checkName + ": " + check.getMessage());
         } else if (check.getMessage().contains("warning") || 
                    check.getMessage().contains("not fully") ||
-                   check.getMessage().contains("soon")) {
+                   check.getMessage().contains("soon") ||
+                   check.getMessage().contains("Staging") ||
+                   check.getMessage().contains("STAGING")) {
             result.addWarning(checkName + ": " + check.getMessage());
         }
     }

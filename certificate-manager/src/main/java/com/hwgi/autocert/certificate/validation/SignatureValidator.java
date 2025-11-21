@@ -33,9 +33,22 @@ public class SignatureValidator implements CertificateValidator {
                 X509Certificate issuerCert = certificateChain.get(1);
                 certificate.verify(issuerCert.getPublicKey());
                 
+                // Staging 인증서 여부 확인
+                String issuerName = issuerCert.getSubjectX500Principal().getName();
+                boolean isStaging = issuerName.contains("(STAGING)") || 
+                                   issuerName.contains("Fake LE") || 
+                                   issuerName.contains("Pretend Pear");
+                
+                String environment = isStaging ? " [Staging]" : "";
+                String details = String.format(
+                        "Issuer: %s, Environment: %s",
+                        issuerCert.getSubjectX500Principal(),
+                        isStaging ? "Staging" : "Production"
+                );
+                
                 return ValidationCheckResult.success(
-                        "Certificate signature verified by issuer: " + issuerCert.getSubjectX500Principal(),
-                        "Issuer: " + issuerCert.getSubjectX500Principal()
+                        "Certificate signature verified by issuer: " + issuerCert.getSubjectX500Principal() + environment,
+                        details
                 );
             }
             
