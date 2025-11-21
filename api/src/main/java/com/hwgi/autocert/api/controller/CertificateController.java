@@ -2,11 +2,13 @@ package com.hwgi.autocert.api.controller;
 
 import com.hwgi.autocert.api.dto.request.CertificateCreateRequest;
 import com.hwgi.autocert.api.dto.request.CertificateUpdateRequest;
+import com.hwgi.autocert.api.dto.response.CertificateDeployResponse;
 import com.hwgi.autocert.api.dto.response.CertificateResponse;
 import com.hwgi.autocert.api.dto.response.PageResponse;
 import com.hwgi.autocert.certificate.service.CertificateService;
 import com.hwgi.autocert.common.dto.ApiResponse;
 import com.hwgi.autocert.domain.model.Certificate;
+import com.hwgi.autocert.domain.model.Deployment;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,7 +41,12 @@ public class CertificateController {
         log.info("Get certificates list - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
 
         Page<Certificate> page = certificateService.findAll(pageable);
-        PageResponse<CertificateResponse> response = PageResponse.from(page.map(CertificateResponse::from));
+        PageResponse<CertificateResponse> response = PageResponse.from(
+            page.map(certificate -> {
+                String latestDeploymentStatus = certificateService.getLatestDeploymentStatus(certificate.getId());
+                return CertificateResponse.from(certificate, latestDeploymentStatus);
+            })
+        );
         return ApiResponse.success(response, "인증서 목록 조회 성공");
     }
 
@@ -49,7 +56,8 @@ public class CertificateController {
         log.info("Get certificate by id: {}", id);
         
         Certificate certificate = certificateService.findById(id);
-        CertificateResponse response = CertificateResponse.from(certificate);
+        String latestDeploymentStatus = certificateService.getLatestDeploymentStatus(id);
+        CertificateResponse response = CertificateResponse.from(certificate, latestDeploymentStatus);
         return ApiResponse.success(response, "인증서 조회 성공");
     }
 
@@ -68,7 +76,8 @@ public class CertificateController {
                 request.getAdmin(),
                 request.getAlertDaysBeforeExpiry(),
                 request.getAutoDeploy());
-        CertificateResponse response = CertificateResponse.from(certificate);
+        String latestDeploymentStatus = certificateService.getLatestDeploymentStatus(certificate.getId());
+        CertificateResponse response = CertificateResponse.from(certificate, latestDeploymentStatus);
         return ApiResponse.success(response, "인증서가 생성 성공");
     }
 
@@ -95,7 +104,8 @@ public class CertificateController {
             request.getAutoDeploy()
         );
         
-        CertificateResponse response = CertificateResponse.from(updated);
+        String latestDeploymentStatus = certificateService.getLatestDeploymentStatus(id);
+        CertificateResponse response = CertificateResponse.from(updated, latestDeploymentStatus);
         return ApiResponse.success(response, "인증서가 수정되었습니다");
     }
 
@@ -107,8 +117,20 @@ public class CertificateController {
         log.info("Renew certificate: {}, autoDeploy: {}", id, autoDeploy);
         
         Certificate certificate = certificateService.renew(id, autoDeploy);
-        CertificateResponse response = CertificateResponse.from(certificate);
+        String latestDeploymentStatus = certificateService.getLatestDeploymentStatus(id);
+        CertificateResponse response = CertificateResponse.from(certificate, latestDeploymentStatus);
         return ApiResponse.success(response, "인증서 갱신 성공");
+    }
+
+    @Operation(summary = "인증서 수동 배포", description = "저장된 인증서를 서버에 수동으로 배포")
+    @PostMapping("/{id}/deploy")
+    public ApiResponse<CertificateDeployResponse> deployCertificate(
+            @PathVariable Long id) {
+        log.info("Deploy certificate: {}", id);
+        
+        Deployment deployment = certificateService.deployManually(id);
+        CertificateDeployResponse response = CertificateDeployResponse.from(deployment);
+        return ApiResponse.success(response, "인증서 배포 성공");
     }
 
     @Operation(summary = "인증서 삭제", description = "인증서 삭제 (주의: 복구 불가)")

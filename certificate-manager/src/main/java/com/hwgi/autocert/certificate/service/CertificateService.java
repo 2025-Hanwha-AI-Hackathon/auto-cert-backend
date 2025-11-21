@@ -13,7 +13,6 @@ import com.hwgi.autocert.domain.repository.ServerRepository;
 import com.hwgi.autocert.domain.repository.DeploymentRepository;
 import com.hwgi.autocert.domain.model.Server;
 import com.hwgi.autocert.domain.model.Deployment;
-import com.hwgi.autocert.notification.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,9 +50,6 @@ public class CertificateService {
     private final CertificateEncryptionUtil encryptionUtil;
     private final AcmeProperties acmeProperties;
     private final CertificateDistributionService distributionService;
-    
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private EmailService emailService;
 
     /**
      * 모든 인증서 조회 (페이지네이션)
@@ -185,16 +181,6 @@ public class CertificateService {
                 deployToServer(saved);
             }
 
-            // 7. 이메일 알림 발송
-            if (emailService != null) {
-                try {
-                    emailService.sendCertificateCreated(saved);
-                } catch (Exception e) {
-                    log.error("Failed to send certificate creation email for domain: {}", domain, e);
-                    // 이메일 발송 실패는 인증서 생성을 실패시키지 않음
-                }
-            }
-
             return saved;
 
         } catch (Exception e) {
@@ -278,16 +264,6 @@ public class CertificateService {
                 log.info("Auto-deployment enabled for renewed certificate: {} (override: {}, stored: {})", 
                     renewed.getId(), autoDeploy, renewed.getAutoDeploy());
                 deployToServer(renewed);
-            }
-
-            // 7. 이메일 알림 발송
-            if (emailService != null) {
-                try {
-                    emailService.sendCertificateRenewed(renewed);
-                } catch (Exception e) {
-                    log.error("Failed to send certificate renewal email for domain: {}", domain, e);
-                    // 이메일 발송 실패는 인증서 갱신을 실패시키지 않음
-                }
             }
 
             return renewed;
@@ -420,7 +396,6 @@ public class CertificateService {
         log.info("Deleting certificate: {}", id);
 
         Certificate certificate = findById(id);
-        String domain = certificate.getDomain(); // 삭제 전에 도메인 저장
         
         // 1. 연관된 배포 이력 삭제 (외래 키 제약 조건 위반 방지)
         List<Deployment> deployments = deploymentRepository.findByCertificateIdOrderByDeployedAtDesc(
@@ -438,16 +413,6 @@ public class CertificateService {
         certificateRepository.delete(certificate);
 
         log.info("Certificate deleted: {}", id);
-        
-        // 3. 이메일 알림 발송
-        if (emailService != null) {
-            try {
-                emailService.sendCertificateDeleted(domain);
-            } catch (Exception e) {
-                log.error("Failed to send certificate deletion email for domain: {}", domain, e);
-                // 이메일 발송 실패는 삭제 작업에 영향을 주지 않음
-            }
-        }
     }
 
     /**
