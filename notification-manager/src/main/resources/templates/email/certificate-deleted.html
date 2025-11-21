@@ -75,6 +75,24 @@
             font-size: 48px;
             margin-bottom: 10px;
         }
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +131,12 @@
                 이 작업이 예상치 못한 것이라면, 새로운 인증서를 즉시 생성하시기 바랍니다.<br>
                 인증서 관리 페이지에서 새 인증서를 등록할 수 있습니다.
             </p>
+            
+            <div class="button-container">
+                <a href="https://2025-hanwha-ai-hackathon.github.io/auto-cert-frontend/" class="button">
+                    🔐 인증서 관리 페이지로 이동
+                </a>
+            </div>
         </div>
         
         <div class="footer">

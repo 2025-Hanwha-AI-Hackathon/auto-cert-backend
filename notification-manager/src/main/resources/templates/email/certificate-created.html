@@ -74,6 +74,24 @@
             font-size: 48px;
             margin-bottom: 10px;
         }
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
     </style>
 </head>
 <body>
@@ -114,6 +132,12 @@
                 인증서가 활성화되었으며, 등록된 서버에 자동으로 배포될 수 있습니다.<br>
                 인증서 관리 페이지에서 상세 정보를 확인하실 수 있습니다.
             </p>
+            
+            <div class="button-container">
+                <a href="https://2025-hanwha-ai-hackathon.github.io/auto-cert-frontend/" class="button">
+                    🔐 인증서 관리 페이지로 이동
+                </a>
+            </div>
         </div>
         
         <div class="footer">
