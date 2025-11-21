@@ -60,19 +60,6 @@ management:
 
 # Auto-Cert Configuration
 autocert:
-  # 암호화 키 설정 (필수)
-  # 인증서 개인키를 암호화하는 데 사용되는 AES-256 키
-  # 주의: 이 키는 한 번 설정하면 절대 변경하면 안 됩니다!
-  # 키를 변경하면 기존에 암호화된 모든 개인키를 복호화할 수 없습니다.
-  # 
-  # 키 생성 방법:
-  #   openssl rand -base64 32
-  # 
-  # 환경변수로 설정 (권장):
-  #   export CERTIFICATE_ENCRYPTION_KEY="your-base64-encoded-key-here"
-  # 
-  # 또는 .env 파일에 추가:
-  #   CERTIFICATE_ENCRYPTION_KEY=your-base64-encoded-key-here
   encryption:
     key: ${CERTIFICATE_ENCRYPTION_KEY}
 
