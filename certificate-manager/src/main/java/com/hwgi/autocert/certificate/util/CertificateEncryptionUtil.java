@@ -1,26 +1,16 @@
 package com.hwgi.autocert.certificate.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/**
- * 인증서 암호화 유틸리티
- * 
- * AES-256-GCM을 사용한 인증서 개인키 암호화/복호화
- * 
- * 보안 고려사항:
- * - 암호화 키는 환경변수 또는 Vault에서 관리
- * - GCM 모드로 무결성 검증 포함
- * - 매번 새로운 IV(Initialization Vector) 사용
- */
 @Slf4j
 @Component
 public class CertificateEncryptionUtil {
@@ -30,8 +20,42 @@ public class CertificateEncryptionUtil {
     private static final int GCM_TAG_LENGTH = 128; // 128 bits
     private static final int AES_KEY_SIZE = 256; // 256 bits
 
-    // TODO: 프로덕션에서는 환경변수나 Vault에서 키 로드
-    private static final String DEFAULT_ENCRYPTION_KEY = generateDefaultKey();
+    private final String encryptionKey;
+
+    /**
+     * 생성자 - application.yml에서 암호화 키 주입
+     * 
+     * @param encryptionKey 암호화 키 (Base64 인코딩)
+     * @throws IllegalStateException 암호화 키가 설정되지 않았거나 유효하지 않은 경우
+     */
+    public CertificateEncryptionUtil(@Value("${autocert.encryption.key}") String encryptionKey) {
+        if (encryptionKey == null || encryptionKey.isEmpty()) {
+            log.error("autocert.encryption.key is not configured!");
+            log.error("Please set CERTIFICATE_ENCRYPTION_KEY environment variable.");
+            log.error("Generate a new key with: openssl rand -base64 32");
+            throw new IllegalStateException(
+                "암호화 키가 설정되지 않았습니다. " +
+                "CERTIFICATE_ENCRYPTION_KEY 환경변수를 반드시 설정해야 합니다. " +
+                "키 생성: openssl rand -base64 32"
+            );
+        }
+
+        // 키 유효성 검증
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(encryptionKey);
+            if (keyBytes.length != AES_KEY_SIZE / 8) {
+                throw new IllegalStateException(
+                    String.format("암호화 키 길이가 올바르지 않습니다. 필요: %d bytes, 실제: %d bytes", 
+                        AES_KEY_SIZE / 8, keyBytes.length)
+                );
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("암호화 키가 올바른 Base64 형식이 아닙니다.", e);
+        }
+
+        this.encryptionKey = encryptionKey;
+        log.info("Certificate encryption utility initialized successfully");
+    }
 
     /**
      * 개인키 암호화
@@ -114,36 +138,10 @@ public class CertificateEncryptionUtil {
 
     /**
      * 암호화 키 로드
-     * 
-     * TODO: 프로덕션 환경에서는 환경변수나 Vault에서 로드
      */
     private SecretKey loadEncryptionKey() {
-        // 환경변수에서 키 로드 시도
-        String keyString = System.getenv("CERTIFICATE_ENCRYPTION_KEY");
-        
-        if (keyString == null || keyString.isEmpty()) {
-            log.warn("Using default encryption key. Set CERTIFICATE_ENCRYPTION_KEY environment variable in production!");
-            keyString = DEFAULT_ENCRYPTION_KEY;
-        }
-
-        byte[] keyBytes = Base64.getDecoder().decode(keyString);
+        byte[] keyBytes = Base64.getDecoder().decode(encryptionKey);
         return new SecretKeySpec(keyBytes, "AES");
-    }
-
-    /**
-     * 기본 암호화 키 생성 (개발용)
-     * 
-     * 프로덕션에서는 절대 사용하지 말 것!
-     */
-    private static String generateDefaultKey() {
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-            keyGenerator.init(AES_KEY_SIZE);
-            SecretKey key = keyGenerator.generateKey();
-            return Base64.getEncoder().encodeToString(key.getEncoded());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate default encryption key", e);
-        }
     }
 
     /**

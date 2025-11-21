@@ -4,7 +4,6 @@ dependencies {
     implementation project(':domain')
     implementation project(':server-manager')
     implementation project(':certificate-manager')
-    implementation project(':notification-manager')
     implementation project(':ai-assistant')
 
     // Spring Boot Starters

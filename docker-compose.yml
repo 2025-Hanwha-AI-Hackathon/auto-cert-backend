@@ -37,6 +37,9 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
 
+      # Certificate Encryption
+      CERTIFICATE_ENCRYPTION_KEY: ${CERTIFICATE_ENCRYPTION_KEY}
+
       # ACME Configuration
       ACME_DIRECTORY_URL: ${ACME_DIRECTORY_URL}
       ACME_ACCOUNT_EMAIL: ${ACME_ACCOUNT_EMAIL}
@@ -63,12 +66,6 @@ services:
       AI_ASSISTANT_MODEL_NAME: ${AI_ASSISTANT_MODEL_NAME}
       AI_ASSISTANT_TEMPERATURE: ${AI_ASSISTANT_TEMPERATURE}
       AI_ASSISTANT_MAX_TOKENS: ${AI_ASSISTANT_MAX_TOKENS}
-
-      # Email Configuration
-      MAIL_HOST: ${MAIL_HOST}
-      MAIL_PORT: ${MAIL_PORT}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

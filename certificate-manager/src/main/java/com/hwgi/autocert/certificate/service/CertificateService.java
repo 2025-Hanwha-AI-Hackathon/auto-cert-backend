@@ -3,16 +3,16 @@ package com.hwgi.autocert.certificate.service;
 import com.hwgi.autocert.certificate.acme.challenge.ChallengeType;
 import com.hwgi.autocert.certificate.acme.service.AcmeOrderService;
 import com.hwgi.autocert.certificate.config.AcmeProperties;
-import com.hwgi.autocert.certificate.util.CertificateEncryptionUtil;
 import com.hwgi.autocert.certificate.distribution.service.CertificateDistributionService;
+import com.hwgi.autocert.certificate.util.CertificateEncryptionUtil;
 import com.hwgi.autocert.common.exception.ResourceNotFoundException;
 import com.hwgi.autocert.domain.model.Certificate;
 import com.hwgi.autocert.domain.model.CertificateStatus;
-import com.hwgi.autocert.domain.repository.CertificateRepository;
-import com.hwgi.autocert.domain.repository.ServerRepository;
-import com.hwgi.autocert.domain.repository.DeploymentRepository;
-import com.hwgi.autocert.domain.model.Server;
 import com.hwgi.autocert.domain.model.Deployment;
+import com.hwgi.autocert.domain.model.Server;
+import com.hwgi.autocert.domain.repository.CertificateRepository;
+import com.hwgi.autocert.domain.repository.DeploymentRepository;
+import com.hwgi.autocert.domain.repository.ServerRepository;
 import com.hwgi.autocert.notification.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -515,57 +515,65 @@ public class CertificateService {
     }
 
     /**
-     * 인증서의 최신 배포 상태 조회
+     * 저장된 인증서를 서버에 수동 배포
      * 
-     * @param certificateId 인증서 ID
-     * @return 최신 배포 상태 (상태 없으면 "UNKNOWN" 반환)
+     * @param certificateId 배포할 인증서 ID
+     * @return 배포 결과
      */
-    public String getLatestDeploymentStatus(Long certificateId) {
-        Page<Deployment> deploymentPage = deploymentRepository.findByCertificateIdOrderByDeployedAtDesc(
-            certificateId, PageRequest.of(0, 1));
+    @Transactional
+    public Deployment deployManually(Long certificateId) {
+        log.info("Manual deployment requested for certificate ID: {}", certificateId);
         
-        if (deploymentPage.hasContent()) {
-            Deployment latestDeployment = deploymentPage.getContent().get(0);
-            return latestDeployment.getStatus().name();
+        // 인증서 조회
+        Certificate certificate = findById(certificateId);
+        
+        // 배포 준비 상태 확인
+        if (!distributionService.isReadyForDeployment(certificate)) {
+            throw new IllegalStateException("인증서가 배포 준비 상태가 아닙니다. 서버 정보 및 인증서 파일을 확인하세요.");
+        }
+
+        // 개인키 복호화
+        String decryptedPrivateKey = decryptPrivateKey(certificate);
+
+        // 배포 실행 전 배포 이력 조회를 위한 서버 정보
+        Server server = certificate.getServer();
+        
+        // 배포 실행
+        boolean deploymentSuccess = distributionService.deploy(certificate, decryptedPrivateKey);
+        
+        if (!deploymentSuccess) {
+            throw new RuntimeException("인증서 배포에 실패했습니다. 서버 연결 및 로그를 확인하세요.");
         }
         
-        return "UNKNOWN";
+        // 최신 배포 이력 조회 (가장 최근에 생성된 배포 이력)
+        Deployment latestDeployment = deploymentRepository
+            .findFirstByCertificateAndServerOrderByDeployedAtDesc(certificate, server)
+            .orElseThrow(() -> new RuntimeException("배포 이력을 찾을 수 없습니다."));
+        
+        log.info("Certificate {} manually deployed successfully to server {}", 
+            certificateId, server.getName());
+        
+        return latestDeployment;
     }
 
     /**
-     * 인증서 수동 배포
+     * 인증서의 최신 배포 상태 조회
      * 
-     * @param id 인증서 ID
-     * @return 배포 이력
+     * @param certificateId 인증서 ID
+     * @return 최신 배포 상태 (배포 이력이 없으면 null)
      */
-    @Transactional
-    public Deployment deployManually(Long id) {
-        log.info("Manual deployment requested for certificate: {}", id);
+    public String getLatestDeploymentStatus(Long certificateId) {
+        Certificate certificate = findById(certificateId);
+        Server server = certificate.getServer();
         
-        Certificate certificate = findById(id);
-        
-        // 인증서 상태 확인
-        if (certificate.getStatus() != ACTIVE) {
-            throw new IllegalStateException("활성화된 인증서만 배포할 수 있습니다. 현재 상태: " + certificate.getStatus());
+        if (server == null) {
+            return null;
         }
         
-        // 서버 확인
-        if (certificate.getServer() == null) {
-            throw new IllegalStateException("서버가 등록되지 않은 인증서는 배포할 수 없습니다.");
-        }
-        
-        // 배포 실행
-        deployToServer(certificate);
-        
-        // 최신 배포 이력 조회 및 반환
-        Page<Deployment> deploymentPage = deploymentRepository.findByCertificateIdOrderByDeployedAtDesc(
-            id, PageRequest.of(0, 1));
-        
-        if (deploymentPage.hasContent()) {
-            return deploymentPage.getContent().get(0);
-        }
-        
-        throw new IllegalStateException("배포 이력을 찾을 수 없습니다.");
+        return deploymentRepository
+            .findFirstByCertificateAndServerOrderByDeployedAtDesc(certificate, server)
+            .map(deployment -> deployment.getStatus().name())
+            .orElse(null);
     }
 
 }
