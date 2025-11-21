@@ -41,6 +41,14 @@ public interface DeploymentRepository extends JpaRepository<Deployment, Long> {
                                             @Param("endDate") LocalDateTime endDate);
 
     /**
+     * 최근 배포 이력 단건 조회 (인증서 + 서버)
+     */
+    @Query("SELECT d FROM Deployment d WHERE d.certificate = :certificate AND d.server = :server ORDER BY d.deployedAt DESC LIMIT 1")
+    java.util.Optional<Deployment> findFirstByCertificateAndServerOrderByDeployedAtDesc(
+        @Param("certificate") com.hwgi.autocert.domain.model.Certificate certificate, 
+        @Param("server") com.hwgi.autocert.domain.model.Server server);
+
+    /**
      * 최근 배포 이력 조회 (인증서 + 서버)
      */
     @Query("SELECT d FROM Deployment d WHERE d.certificate.id = :certificateId AND d.server.id = :serverId ORDER BY d.deployedAt DESC")
