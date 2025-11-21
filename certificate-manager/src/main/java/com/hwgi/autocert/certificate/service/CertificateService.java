@@ -16,6 +16,7 @@ import com.hwgi.autocert.domain.model.Deployment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -494,6 +495,60 @@ public class CertificateService {
             // 배포 실패는 인증서 생성/갱신을 실패시키지 않음
             // 나중에 수동으로 재배포 가능
         }
+    }
+
+    /**
+     * 인증서의 최신 배포 상태 조회
+     * 
+     * @param certificateId 인증서 ID
+     * @return 최신 배포 상태 (상태 없으면 "UNKNOWN" 반환)
+     */
+    public String getLatestDeploymentStatus(Long certificateId) {
+        Page<Deployment> deploymentPage = deploymentRepository.findByCertificateIdOrderByDeployedAtDesc(
+            certificateId, PageRequest.of(0, 1));
+        
+        if (deploymentPage.hasContent()) {
+            Deployment latestDeployment = deploymentPage.getContent().get(0);
+            return latestDeployment.getStatus().name();
+        }
+        
+        return "UNKNOWN";
+    }
+
+    /**
+     * 인증서 수동 배포
+     * 
+     * @param id 인증서 ID
+     * @return 배포 이력
+     */
+    @Transactional
+    public Deployment deployManually(Long id) {
+        log.info("Manual deployment requested for certificate: {}", id);
+        
+        Certificate certificate = findById(id);
+        
+        // 인증서 상태 확인
+        if (certificate.getStatus() != ACTIVE) {
+            throw new IllegalStateException("활성화된 인증서만 배포할 수 있습니다. 현재 상태: " + certificate.getStatus());
+        }
+        
+        // 서버 확인
+        if (certificate.getServer() == null) {
+            throw new IllegalStateException("서버가 등록되지 않은 인증서는 배포할 수 없습니다.");
+        }
+        
+        // 배포 실행
+        deployToServer(certificate);
+        
+        // 최신 배포 이력 조회 및 반환
+        Page<Deployment> deploymentPage = deploymentRepository.findByCertificateIdOrderByDeployedAtDesc(
+            id, PageRequest.of(0, 1));
+        
+        if (deploymentPage.hasContent()) {
+            return deploymentPage.getContent().get(0);
+        }
+        
+        throw new IllegalStateException("배포 이력을 찾을 수 없습니다.");
     }
 
 }
