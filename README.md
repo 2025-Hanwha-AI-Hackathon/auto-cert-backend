@@ -118,6 +118,12 @@ DB_URL=jdbc:postgresql://localhost:5432/autocert
 DB_USERNAME=postgres
 DB_PASSWORD=your_password
 
+# Certificate Encryption (필수!)
+# AES-256 암호화 키 - 인증서 개인키 암호화에 사용
+# 주의: 이 키는 한 번 설정하면 절대 변경하지 마세요!
+# 키 생성: openssl rand -base64 32
+CERTIFICATE_ENCRYPTION_KEY=your_base64_encryption_key_here
+
 # ACME (Staging - 테스트용)
 ACME_DIRECTORY_URL=https://acme-staging-v02.api.letsencrypt.org/directory
 ACME_ACCOUNT_EMAIL=your-email@example.com
