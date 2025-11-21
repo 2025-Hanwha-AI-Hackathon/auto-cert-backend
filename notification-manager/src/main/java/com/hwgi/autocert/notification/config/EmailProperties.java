@@ -37,5 +37,5 @@ public class EmailProperties {
     /**
      * 이메일 발송 활성화 여부
      */
-    private boolean enabled = true;
+    private Boolean enabled = true;
 }
