@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인증서 만료 임박 알림</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .alert-box {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .alert-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .certificate-list {
+            margin: 20px 0;
+        }
+        .certificate-item {
+            background-color: #f8f9fa;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .certificate-item.urgent {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .certificate-domain {
+            font-size: 16px;
+            font-weight: bold;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+        .certificate-details {
+            font-size: 14px;
+            color: #495057;
+        }
+        .days-left {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .days-left.urgent {
+            background-color: #dc3545;
+            color: white;
+        }
+        .days-left.warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .summary {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .action-button {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .server-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .server-info-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">⚠️</div>
+            <h1>인증서 만료 임박 알림</h1>
+        </div>
+        
+        <div class="content">
+            <p>안녕하세요,</p>
+            
+            <div class="alert-box">
+                <div class="alert-title">🔔 7일 이내 만료되는 인증서가 있습니다</div>
+                <p style="margin: 5px 0;">
+                    총 <strong>1</strong>개의 인증서가 만료 예정입니다.<br>
+                    만료 전에 갱신하여 서비스 중단을 방지하세요.
+                </p>
+            </div>
+            
+            <div class="summary">
+                <strong>📊 요약 정보</strong><br>
+                확인 시각: 2025-11-21 09:00:00<br>
+                만료 예정 인증서: 1건
+            </div>
+            
+            <div class="certificate-list">
+                <h3 style="color: #495057; margin-bottom: 15px;">📋 만료 예정 인증서 목록</h3>
+                
+                <div class="certificate-item urgent">
+                    <div class="certificate-domain">
+                        <span>1. one.ctrl-ai.shop</span>
+                        <span class="days-left urgent">0일 남음</span>
+                    </div>
+                    <div class="certificate-details">
+                        🏷️ 인증서 이름: one.ctrl-ai.shop<br>
+                        🌐 도메인: one.ctrl-ai.shop<br>
+                        📜 유형: SSL/TLS 인증서<br>
+                        🏢 발급 기관: Let's Encrypt<br>
+                        📅 발급일: 2025-08-21 12:34:52<br>
+                        ⏰ 만료일: 2025-11-21 23:59:59<br>
+                        📊 상태: 곧 만료<br>
+                        👤 담당자: 황성준
+                    </div>
+                    
+                    <div class="server-info">
+                        <div class="server-info-title">🖥️ 배포된 서버 정보</div>
+                        🔹 서버 이름: one.ctrl-ai.shop<br>
+                        🔹 호스트: 144.24.85.213:22<br>
+                        🔹 서버 타입: Nginx<br>
+                        🔹 SSH 사용자명: fofofe<br>
+                        🔹 SSH 포트: 22<br>
+                        🔹 배포 경로: /etc/nginx/ssl<br>
+                        🔹 인증 방식: 🔒 ID/PASSWORD
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <p style="color: #495057; margin-bottom: 15px;">
+                    <strong>💡 조치 필요</strong><br>
+                    인증서 관리 페이지에서 갱신하거나 AI 챗봇에게 갱신을 요청하세요.
+                </p>
+            </div>
+            
+            <div class="button-container">
+                <a href="https://2025-hanwha-ai-hackathon.github.io/auto-cert-frontend/" class="action-button">
+                    🔐 인증서 관리 페이지로 이동
+                </a>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                <strong>📌 참고사항</strong>
+                <ul style="margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                    <li>Let's Encrypt 인증서는 발급일로부터 90일간 유효합니다.</li>
+                    <li>만료 7일 전부터 매일 알림이 발송됩니다.</li>
+                    <li>자동 갱신 설정을 활성화하면 수동 작업 없이 갱신됩니다.</li>
+                    <li>만료된 인증서는 웹사이트 접근 오류를 발생시킬 수 있습니다.</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="https://2025-hanwha-ai-hackathon.github.io/auto-cert-frontend/" 
+                   style="background-color: #ffc107; color: #212529; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
+                    AutoCert 바로가기
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>이 메일은 AutoCert 시스템에서 매일 오전 9시에 자동으로 발송됩니다.</p>
+            <p>본 메일에 회신하지 마십시오.</p>
+        </div>
+    </div>
+</body>
+</html>
+
