@@ -13,8 +13,10 @@ import com.hwgi.autocert.domain.repository.ServerRepository;
 import com.hwgi.autocert.domain.repository.DeploymentRepository;
 import com.hwgi.autocert.domain.model.Server;
 import com.hwgi.autocert.domain.model.Deployment;
+import com.hwgi.autocert.notification.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +53,9 @@ public class CertificateService {
     private final CertificateEncryptionUtil encryptionUtil;
     private final AcmeProperties acmeProperties;
     private final CertificateDistributionService distributionService;
+
+    @Autowired(required = false)
+    private java.util.Optional<EmailService> emailService;
 
     /**
      * 모든 인증서 조회 (페이지네이션)
@@ -182,6 +187,9 @@ public class CertificateService {
                 deployToServer(saved);
             }
 
+            // 7. 이메일 알림 발송
+            emailService.ifPresent(service -> service.sendCertificateCreated(saved));
+
             return saved;
 
         } catch (Exception e) {
@@ -266,6 +274,9 @@ public class CertificateService {
                     renewed.getId(), autoDeploy, renewed.getAutoDeploy());
                 deployToServer(renewed);
             }
+
+            // 7. 이메일 알림 발송
+            emailService.ifPresent(service -> service.sendCertificateRenewed(renewed));
 
             return renewed;
 
@@ -412,6 +423,9 @@ public class CertificateService {
         
         // 2. 인증서 삭제
         certificateRepository.delete(certificate);
+
+        // 3. 이메일 알림 발송 (삭제 후)
+        emailService.ifPresent(service -> service.sendCertificateDeleted(certificate));
 
         log.info("Certificate deleted: {}", id);
     }
