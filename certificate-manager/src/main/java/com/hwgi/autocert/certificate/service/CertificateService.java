@@ -421,11 +421,14 @@ public class CertificateService {
             deploymentRepository.deleteAll(deployments);
         }
         
-        // 2. 인증서 삭제
+        // 2. 이메일 알림 발송 (삭제 전에 도메인 정보 저장)
+        String domain = certificate.getDomain();
+        
+        // 3. 인증서 삭제
         certificateRepository.delete(certificate);
 
-        // 3. 이메일 알림 발송 (삭제 후)
-        emailService.ifPresent(service -> service.sendCertificateDeleted(certificate));
+        // 4. 이메일 알림 발송
+        emailService.ifPresent(service -> service.sendCertificateDeleted(domain));
 
         log.info("Certificate deleted: {}", id);
     }
